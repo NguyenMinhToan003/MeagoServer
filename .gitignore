@@ -1,0 +1,10 @@
+node_modules/
+dist/
+logs/
+coverage/
+*.log
+
+# env thật không commit — chỉ commit *.example
+.env
+.env.*
+!.env.*.example

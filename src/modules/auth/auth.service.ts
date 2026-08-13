@@ -1,16 +1,12 @@
-import {
-  ConflictException,
-  Inject,
-  Injectable,
-  UnauthorizedException,
-} from '@nestjs/common';
+import { ConflictException, Inject, Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigType } from '@nestjs/config';
-import { JwtService } from '@nestjs/jwt';
+import { JwtService, JwtSignOptions } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import { IsNull, Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import * as crypto from 'crypto';
 import { v4 as uuidv4 } from 'uuid';
+import dayjs from 'dayjs';
 import authConfig from 'src/configs/auth.config';
 import { UsersService } from 'src/modules/users/users.service';
 import { EUserStatus, UserEntity } from 'src/modules/users/user.entity';
@@ -75,7 +71,7 @@ export class AuthService {
       await this.revokeFamily(session.familyId);
       throw new UnauthorizedException('Refresh token reuse detected');
     }
-    if (session.expiresAt < new Date()) {
+    if (dayjs().isAfter(session.expiresAt)) {
       throw new UnauthorizedException('Refresh token expired');
     }
 
@@ -117,13 +113,16 @@ export class AuthService {
   ): Promise<ITokenPair> {
     const accessToken = await this.jwtService.signAsync(
       { sub: user.id, email: user.email },
-      { secret: this.conf.accessSecret, expiresIn: this.conf.accessTtl },
+      {
+        secret: this.conf.accessSecret,
+        // env là string tự do, types mới của jsonwebtoken đòi template "15m"
+        expiresIn: this.conf.accessTtl as JwtSignOptions['expiresIn'],
+      },
     );
 
     const refreshToken = crypto.randomBytes(32).toString('hex');
     const refreshExpiresAt =
-      absoluteExpiresAt ??
-      new Date(Date.now() + this.conf.refreshTtlDays * 24 * 60 * 60 * 1000);
+      absoluteExpiresAt ?? dayjs().add(this.conf.refreshTtlDays, 'day').toDate();
 
     await this.sessionRepo.save(
       this.sessionRepo.create({

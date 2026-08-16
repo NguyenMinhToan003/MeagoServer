@@ -3,6 +3,7 @@ dist/
 logs/
 coverage/
 *.log
+*.tsbuildinfo
 
 # env thật không commit — chỉ commit *.example
 .env

@@ -17,5 +17,5 @@ cp .env.development.example .env.development    # sửa DB/Redis
 docker compose up -d postgres redis             # hạ tầng local
 npm install
 npm run seed            # tạo permissions + role admin + user admin@meago.local
-npm run start:dev       # Swagger: http://localhost:3000/swagger
+npm run start:dev       # Swagger: http://localhost:9000/swagger
 ```

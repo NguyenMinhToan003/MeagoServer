@@ -13,18 +13,28 @@
 |---|---|---|
 | `.env.development.example` | ✅ | template dev — copy thành `.env.development` |
 | `.env.production.example` | ✅ | liệt kê biến bắt buộc cho prod |
-| `.env.development`, `.env.production`, `.env` | ❌ (gitignore) | giá trị thật |
+| `.env.test.example` | ✅ | template e2e test — copy thành `.env.test` |
+| `.env.development`, `.env.production`, `.env.test`, `.env` | ❌ (gitignore) | giá trị thật |
 
 ## Scripts
 ```bash
 npm run start:dev    # NODE_ENV=development (cross-env, chạy được trên Windows)
 npm run start:prod   # NODE_ENV=production, chạy dist/main
+npm run test:e2e     # NODE_ENV không tự set — export/set NODE_ENV=test trước khi chạy
 ```
 
-## Khác biệt dev vs prod
-| | Development | Production |
-|---|---|---|
-| Schema | `DB_SYNCHRONIZE=true` (iterate nhanh) | `false` — bắt buộc `npm run migration:run` |
-| Secret | trong `.env.development` | env vars từ secret manager |
-| Cookie refresh | `secure: false` (theo NODE_ENV) | `secure: true` |
-| CORS | localhost | domain thật |
+## Khác biệt dev vs prod vs test
+| | Development | Production | Test (e2e) |
+|---|---|---|---|
+| Schema | `DB_SYNCHRONIZE=true` (iterate nhanh) | `false` — bắt buộc `npm run migration:run` | `true` — dựng schema sạch mỗi lần chạy |
+| Database | `meago_dev` | database prod | `meago_test` — tách riêng, không đụng data dev |
+| Secret | trong `.env.development` | env vars từ secret manager | trong `.env.test` (secret giả) |
+| Cookie refresh | `secure: false` (theo NODE_ENV) | `secure: true` | `secure: false` |
+| CORS | localhost | domain thật | localhost |
+
+## Chạy e2e test
+`test/jest-e2e.json` không tự đọc `.env.test` qua `ConfigModule` như app thật — cần Postgres/Redis đang chạy (dùng chung container dev, DB riêng `meago_test`) và `NODE_ENV=test` để `ConfigModule` trong `AppModule` nạp đúng file khi test bootstrap `AppModule` thật:
+```bash
+cp .env.test.example .env.test          # sửa nếu cần, mặc định trỏ DB_PORT=5433 (giống dev)
+NODE_ENV=test npm run test:e2e          # Windows PowerShell: $env:NODE_ENV="test"; npm run test:e2e
+```

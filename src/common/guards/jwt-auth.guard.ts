@@ -1,9 +1,16 @@
-import { CanActivate, ExecutionContext, Injectable, UnauthorizedException } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
+import {
+  CanActivate,
+  ExecutionContext,
+  Inject,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
+import { ConfigType } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { Reflector } from '@nestjs/core';
 import { Request } from 'express';
 import { IS_PUBLIC_KEY } from '../decorators/public.decorator';
+import { IJwtUser } from '../decorators/current-user.decorator';
 import authConfig from 'src/configs/auth.config';
 
 /**
@@ -15,7 +22,7 @@ import authConfig from 'src/configs/auth.config';
 export class JwtAuthGuard implements CanActivate {
   constructor(
     private readonly jwtService: JwtService,
-    private readonly configService: ConfigService,
+    @Inject(authConfig.KEY) private readonly conf: ConfigType<typeof authConfig>,
     private readonly reflector: Reflector,
   ) {}
 
@@ -31,10 +38,10 @@ export class JwtAuthGuard implements CanActivate {
     if (!token) throw new UnauthorizedException('Missing access token');
 
     try {
-      const payload = await this.jwtService.verifyAsync(token, {
-        secret: this.configService.get(authConfig.KEY)?.accessSecret,
+      const payload = await this.jwtService.verifyAsync<IJwtUser>(token, {
+        secret: this.conf.accessSecret,
       });
-      (request as never as { user: unknown }).user = payload;
+      (request as never as { user: IJwtUser }).user = payload;
       return true;
     } catch {
       throw new UnauthorizedException('Invalid or expired access token');

@@ -6,10 +6,7 @@ import { UserEntity } from './user.entity';
 
 @Injectable()
 export class UsersService extends BaseService<UserEntity> {
-  constructor(
-    @InjectRepository(UserEntity) repo: Repository<UserEntity>,
-    dataSource: DataSource,
-  ) {
+  constructor(@InjectRepository(UserEntity) repo: Repository<UserEntity>, dataSource: DataSource) {
     super(repo, UserEntity, dataSource, 'User', ['email', 'displayName']);
   }
 

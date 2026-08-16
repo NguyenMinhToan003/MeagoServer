@@ -4,7 +4,9 @@ Meago: nền tảng đăng tải, chia sẻ **audio / truyện**. Repo này là 
 
 ## Stack
 
-NestJS 11 · TypeScript 6 · TypeORM ^1.1.0 · PostgreSQL (pg 8) · Redis (ioredis 5) · JWT + refresh rotation · Swagger
+Node.js 24 LTS · NestJS 11 · TypeScript 6 · TypeORM ^1.1.0 · PostgreSQL (pg 8) · Redis (ioredis 5) · JWT + refresh rotation · Swagger
+
+Version cụ thể luôn lấy theo `package.json` — mục này chỉ ghi major để tránh lệch tài liệu mỗi lần patch/minor update.
 
 ## Cấu trúc
 
@@ -27,6 +29,8 @@ src/
   modules/        # feature modules (modular monolith theo domain)
     users/  auth/  rbac/  health/
   app.module.ts  main.ts
+test/
+  app.e2e-spec.ts  jest-e2e.json   # e2e — cần .env.test (xem 05-environments.md)
 ```
 
 ## Quy ước cốt lõi
@@ -51,7 +55,12 @@ src/
 ## Chạy
 
 ```bash
-cp .env.development.example .env.development   # sửa DB/Redis
+nvm use 24                                                        # Node 24 LTS
+cp .env.development.example .env.development                     # sửa DB/Redis
+docker compose --env-file .env.development up -d postgres redis  # hạ tầng local
 npm install
+npm run seed            # tạo permissions + role admin + user admin@meago.local
 npm run start:dev      # Swagger: http://localhost:9000/swagger
 ```
+
+Chi tiết Docker (port conflict với service native, chạy full stack...): xem `06-docker.md`. Chạy test: xem `05-environments.md`.

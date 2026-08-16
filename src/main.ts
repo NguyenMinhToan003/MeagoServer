@@ -7,11 +7,11 @@ import helmet from 'helmet';
 import compression from 'compression';
 import cookieParser from 'cookie-parser';
 import { AppModule } from './app.module';
-import { APP_CONFIG } from './configs/app.config';
+import { APP_CONFIG, AppConfig } from './configs/app.config';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
-  const conf = app.get(ConfigService).get(APP_CONFIG);
+  const conf = app.get(ConfigService).get<AppConfig>(APP_CONFIG)!;
 
   app.set('trust proxy', 1);
   app.setGlobalPrefix(conf.apiPrefix);
@@ -35,4 +35,7 @@ async function bootstrap() {
   await app.listen(conf.port, '0.0.0.0');
   new Logger('Bootstrap').log(`Meago API listening on port ${conf.port}`);
 }
-bootstrap();
+bootstrap().catch((err: unknown) => {
+  new Logger('Bootstrap').error('Failed to start Meago API', err);
+  process.exit(1);
+});

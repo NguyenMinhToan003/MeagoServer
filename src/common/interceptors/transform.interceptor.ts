@@ -1,4 +1,5 @@
 import { CallHandler, ExecutionContext, Injectable, NestInterceptor } from '@nestjs/common';
+import { Response } from 'express';
 import { Observable, map } from 'rxjs';
 import { IBaseResponse } from '../interfaces/response.interface';
 
@@ -9,7 +10,7 @@ import { IBaseResponse } from '../interfaces/response.interface';
 @Injectable()
 export class TransformInterceptor<T> implements NestInterceptor<T, IBaseResponse<T>> {
   intercept(context: ExecutionContext, next: CallHandler<T>): Observable<IBaseResponse<T>> {
-    const res = context.switchToHttp().getResponse();
+    const res = context.switchToHttp().getResponse<Response>();
     return next.handle().pipe(
       map((data) => ({
         statusCode: res.statusCode,

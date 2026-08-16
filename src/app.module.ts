@@ -8,7 +8,10 @@ import databaseConfig, { DATABASE_CONFIG } from './configs/database.config';
 import authConfig from './configs/auth.config';
 import redisConfig from './configs/redis.config';
 import { envValidationSchema } from './configs/env.validation';
-import { HttpExceptionFilter, TypeOrmExceptionFilter } from './common/filters/http-exception.filter';
+import {
+  HttpExceptionFilter,
+  TypeOrmExceptionFilter,
+} from './common/filters/http-exception.filter';
 import { TransformInterceptor } from './common/interceptors/transform.interceptor';
 import { LoggerMiddleware } from './common/middlewares/logger.middleware';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
@@ -23,8 +26,6 @@ import { HealthModule } from './modules/health/health.module';
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      // chuẩn docs NestJS: file theo NODE_ENV, fallback .env;
-      // biến môi trường hệ thống (container/CI) luôn ưu tiên hơn file
       envFilePath: [`.env.${process.env.NODE_ENV ?? 'development'}`, '.env'],
       load: [appConfig, databaseConfig, authConfig, redisConfig],
       validationSchema: envValidationSchema,
@@ -52,6 +53,6 @@ import { HealthModule } from './modules/health/health.module';
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
-    consumer.apply(LoggerMiddleware).forRoutes('*');
+    consumer.apply(LoggerMiddleware).forRoutes('*path');
   }
 }

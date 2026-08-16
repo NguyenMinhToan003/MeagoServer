@@ -54,7 +54,7 @@ export class AuthController {
   @HttpCode(200)
   @Post('refresh')
   async refresh(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
-    const raw = req.cookies?.[this.conf.refreshCookieName];
+    const raw = req.cookies?.[this.conf.refreshCookieName] as string | undefined;
     if (!raw) throw new UnauthorizedException('Missing refresh token');
     const pair = await this.authService.refresh(raw, this.clientMeta(req));
     this.setRefreshCookie(res, pair);
@@ -65,7 +65,7 @@ export class AuthController {
   @HttpCode(200)
   @Post('logout')
   async logout(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
-    const raw = req.cookies?.[this.conf.refreshCookieName];
+    const raw = req.cookies?.[this.conf.refreshCookieName] as string | undefined;
     if (raw) await this.authService.logout(raw);
     this.clearRefreshCookie(res);
     return { success: true };

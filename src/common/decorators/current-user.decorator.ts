@@ -7,5 +7,8 @@ export interface IJwtUser {
 
 /** Lấy user đã được JwtAuthGuard gắn vào request. */
 export const CurrentUser = createParamDecorator(
-  (_data: unknown, ctx: ExecutionContext): IJwtUser => ctx.switchToHttp().getRequest().user,
+  (_data: unknown, ctx: ExecutionContext): IJwtUser => {
+    const request = ctx.switchToHttp().getRequest<{ user: IJwtUser }>();
+    return request.user;
+  },
 );

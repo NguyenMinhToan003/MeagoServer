@@ -23,7 +23,7 @@ export class PermissionsGuard implements CanActivate {
     ]);
     if (!required?.length) return true;
 
-    const user: IJwtUser | undefined = context.switchToHttp().getRequest().user;
+    const user = context.switchToHttp().getRequest<{ user?: IJwtUser }>().user;
     if (!user) return false;
 
     const granted = await this.rbacService.getUserPermissions(user.sub);

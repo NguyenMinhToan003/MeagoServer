@@ -2,7 +2,15 @@ import { registerAs } from '@nestjs/config';
 
 export const AUTH_CONFIG = 'auth';
 
-export default registerAs(AUTH_CONFIG, () => ({
+export interface AuthConfig {
+  accessSecret: string | undefined;
+  accessTtl: string;
+  refreshTtlDays: number;
+  refreshCookieName: string;
+  permissionCacheTtlMs: number;
+}
+
+export default registerAs(AUTH_CONFIG, (): AuthConfig => ({
   accessSecret: process.env.JWT_ACCESS_SECRET,
   accessTtl: process.env.JWT_ACCESS_TTL ?? '15m',
   refreshTtlDays: parseInt(process.env.REFRESH_TOKEN_TTL_DAYS ?? '14', 10),

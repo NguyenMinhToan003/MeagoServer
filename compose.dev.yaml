@@ -1,0 +1,22 @@
+services:
+  postgres:
+    environment:
+      POSTGRES_USER: ${DB_USERNAME:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+      POSTGRES_DB: ${DB_DATABASE:-meago_dev}
+    ports:
+      - '${DB_PORT:-5432}:5432'
+
+  redis:
+    ports:
+      - '${REDIS_PORT:-6379}:6379'
+
+  api:
+    environment:
+      DB_USERNAME: ${DB_USERNAME:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:-postgres}
+      DB_DATABASE: ${DB_DATABASE:-meago_dev}
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:-local-only-change-this-secret-at-least-32-chars}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000}
+    ports:
+      - '${PORT:-9000}:9000'

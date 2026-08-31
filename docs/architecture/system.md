@@ -2,7 +2,9 @@
 
 Tài liệu này mô tả modular monolith hiện tại và ranh giới cần giữ khi mở rộng. Nó là bản đồ triển khai, không phải sơ đồ kiến trúc lý tưởng chưa có trong code.
 
-> Bản trình bày trực quan có thể chỉnh sửa bằng diagrams.net: [backend-architecture.drawio](diagrams/backend-architecture.drawio).
+> Bản trình bày trực quan có thể chỉnh sửa bằng diagrams.net: [backend-architecture.drawio](../diagrams/backend-architecture.drawio).
+
+Quy ước sơ đồ: đường liền biểu diễn dependency/adapter đang triển khai; đường nét đứt tới `@meago/core` là contract dependency; `SESSION ADAPTER` nét đứt là lựa chọn đã thiết kế nhưng **chưa được wire** trong MeagoServer hiện tại. JWT adapter là implementation đang active. Thay boundary hoặc trạng thái implementation phải cập nhật cả file này và source draw.io.
 
 ## Bản đồ thư mục
 
@@ -31,6 +33,8 @@ src/
 ```
 
 ## Ranh giới kiến trúc
+
+Password hashing đi qua `PasswordHasher`. `AuthService` không import thư viện hash cụ thể; `Argon2PasswordHasher` là adapter mặc định và dùng Argon2id. Adapter nằm trong `src/common/security`, không export qua `@meago/core` vì đây là security implementation riêng của Server.
 
 ```mermaid
 flowchart TB

@@ -1,10 +1,7 @@
 import 'reflect-metadata';
+import '../configs/bootstrap-environment';
 import { DataSource } from 'typeorm';
-import * as dotenv from 'dotenv';
-
-// cùng quy ước với ConfigModule: .env.<NODE_ENV> trước, fallback .env
-dotenv.config({ path: `.env.${process.env.NODE_ENV ?? 'development'}` });
-dotenv.config({ path: '.env' });
+import { join } from 'node:path';
 
 /**
  * DataSource chuẩn cho TypeORM CLI (migration) — synchronize luôn false ở đây.
@@ -18,6 +15,6 @@ export default new DataSource({
   password: process.env.DB_PASSWORD,
   database: process.env.DB_DATABASE,
   synchronize: false,
-  entities: ['src/**/*.entity.ts'],
-  migrations: ['src/database/migrations/*.ts'],
+  entities: [join(__dirname, '..', '**', '*.entity.{js,ts}')],
+  migrations: [join(__dirname, 'migrations', '*.{js,ts}')],
 });

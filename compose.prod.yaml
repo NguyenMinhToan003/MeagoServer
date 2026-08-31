@@ -1,0 +1,92 @@
+services:
+  postgres:
+    environment:
+      POSTGRES_USER: ${DB_USERNAME:?DB_USERNAME is required}
+      POSTGRES_DB: ${DB_DATABASE:?DB_DATABASE is required}
+      POSTGRES_PASSWORD_FILE: /run/secrets/db_password
+    secrets:
+      - db_password
+
+  redis:
+    command:
+      - /bin/sh
+      - -c
+      - exec redis-server --appendonly yes --requirepass "$$(cat /run/secrets/redis_password)"
+    secrets:
+      - redis_password
+    healthcheck:
+      test: ['CMD-SHELL', 'REDISCLI_AUTH="$$(cat /run/secrets/redis_password)" redis-cli ping | grep PONG']
+
+  migrate:
+    build:
+      context: .
+      target: runtime
+    restart: 'no'
+    init: true
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: ['node', './node_modules/typeorm/cli.js', '-d', 'dist/database/data-source.js', 'migration:run']
+    environment: &api-environment
+      NODE_ENV: production
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USERNAME: ${DB_USERNAME:?DB_USERNAME is required}
+      DB_PASSWORD_FILE: /run/secrets/db_password
+      DB_DATABASE: ${DB_DATABASE:?DB_DATABASE is required}
+      DB_SYNCHRONIZE: 'false'
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD_FILE: /run/secrets/redis_password
+      JWT_ACCESS_SECRET_FILE: /run/secrets/jwt_access_secret
+      CORS_ORIGINS: ${CORS_ORIGINS:?CORS_ORIGINS is required}
+    secrets: &api-secrets
+      - db_password
+      - redis_password
+      - jwt_access_secret
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - /tmp:size=32m,mode=1777
+
+  api:
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    environment: *api-environment
+    secrets: *api-secrets
+    read_only: true
+    tmpfs:
+      - /tmp:size=64m,mode=1777
+
+  web:
+    build:
+      context: ../MeagoClient
+      args:
+        API_INTERNAL_URL: http://api:9000
+    init: true
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_healthy
+    ports:
+      - '${WEB_PORT:-3000}:3000'
+    read_only: true
+    tmpfs:
+      - /tmp:size=64m,mode=1777
+    security_opt:
+      - no-new-privileges:true
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: '3'
+
+secrets:
+  db_password:
+    environment: DB_PASSWORD
+  redis_password:
+    environment: REDIS_PASSWORD
+  jwt_access_secret:
+    environment: JWT_ACCESS_SECRET

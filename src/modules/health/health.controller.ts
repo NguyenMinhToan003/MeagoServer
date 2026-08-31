@@ -17,4 +17,17 @@ export class HealthController {
   check() {
     return this.health.check([() => this.db.pingCheck('database')]);
   }
+
+  @Public()
+  @Get('live')
+  live() {
+    return { status: 'ok' };
+  }
+
+  @Public()
+  @Get('ready')
+  @HealthCheck()
+  ready() {
+    return this.health.check([() => this.db.pingCheck('database')]);
+  }
 }

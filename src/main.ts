@@ -1,5 +1,6 @@
+import './instrument';
 import { NestFactory } from '@nestjs/core';
-import { Logger, ValidationPipe, VersioningType } from '@nestjs/common';
+import { ValidationPipe, VersioningType } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { NestExpressApplication } from '@nestjs/platform-express';
@@ -8,9 +9,12 @@ import compression from 'compression';
 import cookieParser from 'cookie-parser';
 import { AppModule } from './app.module';
 import { APP_CONFIG, AppConfig } from './configs/app.config';
+import { Logger } from 'nestjs-pino';
 
 async function bootstrap() {
-  const app = await NestFactory.create<NestExpressApplication>(AppModule);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, { bufferLogs: true });
+  app.useLogger(app.get(Logger));
+  app.enableShutdownHooks();
   const conf = app.get(ConfigService).get<AppConfig>(APP_CONFIG)!;
 
   app.set('trust proxy', 1);
@@ -33,9 +37,9 @@ async function bootstrap() {
   SwaggerModule.setup('swagger', app, SwaggerModule.createDocument(app, swaggerConfig));
 
   await app.listen(conf.port, '0.0.0.0');
-  new Logger('Bootstrap').log(`Meago API listening on port ${conf.port}`);
+  app.get(Logger).log(`Meago API listening on port ${conf.port}`, 'Bootstrap');
 }
 bootstrap().catch((err: unknown) => {
-  new Logger('Bootstrap').error('Failed to start Meago API', err);
+  console.error('Failed to start Meago API', err);
   process.exit(1);
 });

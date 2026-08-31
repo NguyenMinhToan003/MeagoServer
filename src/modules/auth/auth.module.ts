@@ -7,6 +7,8 @@ import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { JwtAuthenticationAdapter } from './jwt-authentication.adapter';
 import { AUTHENTICATION_PORT } from 'src/common/auth/authentication.port';
+import { PASSWORD_HASHER } from 'src/common/security/password-hasher.port';
+import { Argon2PasswordHasher } from 'src/common/security/argon2-password-hasher.adapter';
 
 @Module({
   imports: [
@@ -18,7 +20,9 @@ import { AUTHENTICATION_PORT } from 'src/common/auth/authentication.port';
   providers: [
     AuthService,
     JwtAuthenticationAdapter,
+    Argon2PasswordHasher,
     { provide: AUTHENTICATION_PORT, useExisting: JwtAuthenticationAdapter },
+    { provide: PASSWORD_HASHER, useExisting: Argon2PasswordHasher },
   ],
   exports: [AuthService, JwtModule, AUTHENTICATION_PORT],
 })

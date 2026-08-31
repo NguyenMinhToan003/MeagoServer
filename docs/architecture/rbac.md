@@ -1,4 +1,4 @@
-# Thiết kế RBAC động (permission-based)
+# RBAC động (permission-based)
 
 > Trạng thái: THIẾT KẾ ĐÃ CHỐT — sẽ code trong phần nền móng.
 > Không có teams/phòng ban/leader theo yêu cầu dự án.

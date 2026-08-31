@@ -20,6 +20,7 @@ import { AuthService, ITokenPair } from './auth.service';
 import { LoginDto, RegisterDto } from './auth.dto';
 import { UsersService } from 'src/modules/users/users.service';
 import { RbacService } from 'src/modules/rbac/rbac.service';
+import { Throttle } from '@nestjs/throttler';
 
 @ApiTags('auth')
 @Controller('auth')
@@ -32,6 +33,7 @@ export class AuthController {
   ) {}
 
   @Public()
+  @Throttle({ default: { limit: 3, ttl: 60_000 } })
   @Post('register')
   async register(@Body() dto: RegisterDto) {
     const user = await this.authService.register(dto.email, dto.displayName, dto.password);
@@ -39,6 +41,7 @@ export class AuthController {
   }
 
   @Public()
+  @Throttle({ default: { limit: 5, ttl: 60_000 } })
   @HttpCode(200)
   @Post('login')
   async login(
@@ -52,6 +55,7 @@ export class AuthController {
   }
 
   @Public()
+  @Throttle({ default: { limit: 20, ttl: 60_000 } })
   @HttpCode(200)
   @Post('refresh')
   async refresh(@Req() req: Request, @Res({ passthrough: true }) res: Response) {

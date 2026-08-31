@@ -8,6 +8,7 @@ import {
 } from '@nestjs/common';
 import { Request, Response } from 'express';
 import { TypeORMError } from 'typeorm';
+import * as Sentry from '@sentry/nestjs';
 
 /** Shape lỗi thống nhất (theo errors.middleware của source mẫu). */
 const buildBody = (
@@ -37,6 +38,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
       code?: string;
       details?: unknown;
     };
+    if (status >= 500) Sentry.captureException(exception);
     ctx
       .getResponse<Response>()
       .status(status)
@@ -59,6 +61,7 @@ export class TypeOrmExceptionFilter implements ExceptionFilter {
   catch(exception: TypeORMError, host: ArgumentsHost) {
     const ctx = host.switchToHttp();
     this.logger.error(exception.message, exception.stack);
+    Sentry.captureException(exception);
     // không leak chi tiết SQL ra ngoài
     ctx
       .getResponse<Response>()

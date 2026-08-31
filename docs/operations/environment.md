@@ -1,4 +1,4 @@
-# Cấu hình môi trường Development / Production
+# Cấu hình môi trường
 
 > Theo chuẩn docs NestJS (https://docs.nestjs.com/techniques/configuration), không theo cách của dự án mẫu.
 

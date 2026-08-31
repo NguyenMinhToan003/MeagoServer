@@ -3,13 +3,13 @@ import { ConfigType } from '@nestjs/config';
 import { JwtService, JwtSignOptions } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, IsNull, Repository } from 'typeorm';
-import * as bcrypt from 'bcrypt';
 import * as crypto from 'crypto';
 import dayjs from 'dayjs';
 import authConfig from 'src/configs/auth.config';
 import { UsersService } from 'src/modules/users/users.service';
 import { EUserStatus, UserEntity } from 'src/modules/users/user.entity';
 import { RefreshSessionEntity } from './refresh-session.entity';
+import { PASSWORD_HASHER, PasswordHasher } from 'src/common/security/password-hasher.port';
 
 export interface ITokenPair {
   accessToken: string;
@@ -39,6 +39,7 @@ export class AuthService {
     private readonly sessionRepo: Repository<RefreshSessionEntity>,
     @Inject(authConfig.KEY) private readonly conf: ConfigType<typeof authConfig>,
     private readonly dataSource: DataSource,
+    @Inject(PASSWORD_HASHER) private readonly passwordHasher: PasswordHasher,
   ) {}
 
   async register(email: string, displayName: string, password: string): Promise<UserEntity> {
@@ -48,13 +49,17 @@ export class AuthService {
     return this.usersService.create({
       email,
       displayName,
-      passwordHash: await bcrypt.hash(password, 10),
+      passwordHash: await this.passwordHasher.hash(password),
     });
   }
 
   async login(email: string, password: string, meta: IClientMeta): Promise<ITokenPair> {
     const user = await this.usersService.findByEmail(email);
-    if (!user || !(await bcrypt.compare(password, user.passwordHash))) {
+    const passwordMatches = await this.passwordHasher.verifyOrDummy(
+      user?.passwordHash ?? null,
+      password,
+    );
+    if (!user || !passwordMatches) {
       throw new UnauthorizedException('Invalid credentials');
     }
     if (user.status !== EUserStatus.ACTIVE) {

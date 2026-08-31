@@ -1,25 +1,23 @@
-# ===== Build stage =====
+# syntax=docker/dockerfile:1
 FROM node:24-alpine AS build
 WORKDIR /app
 COPY package*.json ./
-RUN npm ci
+RUN --mount=type=cache,target=/root/.npm npm ci
 COPY . .
 RUN npm run build
 
-# ===== Production deps =====
-FROM node:24-alpine AS deps
+FROM node:24-alpine AS production-dependencies
 WORKDIR /app
 COPY package*.json ./
-RUN npm ci --omit=dev
+RUN --mount=type=cache,target=/root/.npm npm ci --omit=dev && npm cache clean --force
 
-# ===== Runtime =====
-FROM node:24-alpine
+FROM node:24-alpine AS runtime
 WORKDIR /app
-ENV NODE_ENV=production
-# chạy non-root
-USER node
-COPY --chown=node:node --from=deps /app/node_modules ./node_modules
+ENV NODE_ENV=production \
+    PORT=9000
+COPY --chown=node:node --from=production-dependencies /app/node_modules ./node_modules
 COPY --chown=node:node --from=build /app/dist ./dist
 COPY --chown=node:node package.json ./
+USER node
 EXPOSE 9000
-CMD ["node", "dist/main"]
+CMD ["node", "dist/main.js"]

@@ -1,5 +1,4 @@
 import { UnauthorizedException } from '@nestjs/common';
-import * as bcrypt from 'bcrypt';
 import { AuthService } from './auth.service';
 import { EUserStatus } from 'src/modules/users/user.entity';
 
@@ -35,25 +34,32 @@ describe('AuthService', () => {
   const dataSource = {
     transaction: jest.fn(async (work) => work({ getRepository: () => sessionRepo })),
   };
+  const passwordHasher = {
+    hash: jest.fn(),
+    verify: jest.fn(),
+    verifyOrDummy: jest.fn(),
+  };
   const service = new AuthService(
     usersService as never,
     jwtService as never,
     sessionRepo as never,
     config,
     dataSource as never,
+    passwordHasher,
   );
 
   beforeEach(() => jest.clearAllMocks());
 
   it('does not reveal whether an email exists during login', async () => {
     usersService.findByEmail.mockResolvedValue(null);
+    passwordHasher.verifyOrDummy.mockResolvedValue(false);
     await expect(service.login('missing@meago.test', 'password', {})).rejects.toThrow(
       'Invalid credentials',
     );
   });
 
   it('issues an access token and stores only a refresh-token hash', async () => {
-    const passwordHash = await bcrypt.hash('correct-password', 4);
+    const passwordHash = '$argon2id$test-hash';
     usersService.findByEmail.mockResolvedValue({
       id: 'user-1',
       email: 'user@meago.test',
@@ -61,6 +67,8 @@ describe('AuthService', () => {
       status: EUserStatus.ACTIVE,
     });
     jwtService.signAsync.mockResolvedValue('access-token');
+    passwordHasher.verify.mockResolvedValue(true);
+    passwordHasher.verifyOrDummy.mockResolvedValue(true);
 
     const result = await service.login('user@meago.test', 'correct-password', {
       ip: '127.0.0.1',

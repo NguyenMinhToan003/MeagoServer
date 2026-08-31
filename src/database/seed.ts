@@ -1,10 +1,10 @@
 import 'reflect-metadata';
-import * as bcrypt from 'bcrypt';
 import dataSource from './data-source';
 import { RoleEntity } from 'src/modules/rbac/role.entity';
 import { PermissionEntity } from 'src/modules/rbac/permission.entity';
 import { UserEntity } from 'src/modules/users/user.entity';
 import { PERMISSIONS } from '@meago/core';
+import { Argon2PasswordHasher } from 'src/common/security/argon2-password-hasher.adapter';
 
 /**
  * Seed tối thiểu: permissions gốc + role "admin" full quyền + user admin.
@@ -13,6 +13,7 @@ import { PERMISSIONS } from '@meago/core';
 const permissionNames = Object.values(PERMISSIONS).flatMap((group) => Object.values(group));
 
 async function seed() {
+  const passwordHasher = new Argon2PasswordHasher();
   await dataSource.initialize();
   const permRepo = dataSource.getRepository(PermissionEntity);
   const roleRepo = dataSource.getRepository(RoleEntity);
@@ -36,7 +37,7 @@ async function seed() {
     user = userRepo.create({
       email,
       displayName: 'Admin',
-      passwordHash: await bcrypt.hash(process.env.SEED_ADMIN_PASSWORD ?? 'admin12345', 10),
+      passwordHash: await passwordHasher.hash(process.env.SEED_ADMIN_PASSWORD ?? 'admin12345'),
     });
   }
   user.roles = [admin];

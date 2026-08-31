@@ -10,7 +10,7 @@ Nền tảng đăng tải, chia sẻ **audio / truyện** — NestJS + PostgreSQ
 cp .env.development.example .env.development              # sửa DB/Redis
 docker compose --env-file .env.development -f compose.yaml -f compose.dev.yaml up -d postgres redis
 npm install
-npm run seed            # tạo permissions + role admin + user admin@meago.local
+npm run seed            # tạo dữ liệu hệ thống + admin local (idempotent)
 npm run start:dev       # Swagger: http://localhost:9000/swagger
 ```
 

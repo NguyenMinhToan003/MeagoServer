@@ -11,6 +11,7 @@ const fileBackedSecrets = [
   'JWT_ACCESS_SECRET',
   'REDIS_PASSWORD',
   'SENTRY_DSN',
+  'BOOTSTRAP_ADMIN_PASSWORD',
 ] as const;
 
 for (const name of fileBackedSecrets) {

@@ -2,7 +2,7 @@ import { ConflictException, Inject, Injectable, UnauthorizedException } from '@n
 import { ConfigType } from '@nestjs/config';
 import { JwtService, JwtSignOptions } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DataSource, IsNull, Repository } from 'typeorm';
+import { DataSource, EntityManager, IsNull, QueryFailedError, Repository } from 'typeorm';
 import * as crypto from 'crypto';
 import dayjs from 'dayjs';
 import authConfig from 'src/configs/auth.config';
@@ -10,6 +10,13 @@ import { UsersService } from 'src/modules/users/users.service';
 import { EUserStatus, UserEntity } from 'src/modules/users/user.entity';
 import { RefreshSessionEntity } from './refresh-session.entity';
 import { PASSWORD_HASHER, PasswordHasher } from 'src/common/security/password-hasher.port';
+import {
+  acquireTransactionAdvisoryLock,
+  runInTransaction as runDatabaseTransaction,
+} from 'src/database/concurrency';
+
+const AUTH_USER_LOCK_NAMESPACE = 1_294_638_201;
+const AUTH_FAMILY_LOCK_NAMESPACE = 1_294_638_202;
 
 export interface ITokenPair {
   accessToken: string;
@@ -43,18 +50,29 @@ export class AuthService {
   ) {}
 
   async register(email: string, displayName: string, password: string): Promise<UserEntity> {
-    if (await this.usersService.findByEmail(email)) {
+    const normalizedEmail = email.trim().toLowerCase();
+    if (await this.usersService.findByEmail(normalizedEmail)) {
       throw new ConflictException('Email already registered');
     }
-    return this.usersService.create({
-      email,
-      displayName,
-      passwordHash: await this.passwordHasher.hash(password),
-    });
+    try {
+      return await this.usersService.create({
+        email: normalizedEmail,
+        displayName: displayName.trim(),
+        passwordHash: await this.passwordHasher.hash(password),
+      });
+    } catch (error) {
+      if (this.isEmailUniqueViolation(error)) {
+        throw new ConflictException({
+          code: 'AUTH_EMAIL_ALREADY_EXISTS',
+          message: 'Email already registered',
+        });
+      }
+      throw error;
+    }
   }
 
   async login(email: string, password: string, meta: IClientMeta): Promise<ITokenPair> {
-    const user = await this.usersService.findByEmail(email);
+    const user = await this.usersService.findByEmail(email.trim().toLowerCase());
     const passwordMatches = await this.passwordHasher.verifyOrDummy(
       user?.passwordHash ?? null,
       password,
@@ -66,85 +84,133 @@ export class AuthService {
       throw new UnauthorizedException('Account is blocked');
     }
 
-    return this.dataSource.transaction(async (manager) => {
-      const issued = await this.issueTokenPair(
-        manager.getRepository(RefreshSessionEntity),
-        user,
-        crypto.randomUUID(),
-        meta,
-      );
-      return issued.pair;
-    });
+    return runDatabaseTransaction(
+      this.dataSource,
+      async (manager) => {
+        await this.lockUser(manager, user.id);
+        const currentUser = await this.usersService.findOneById(user.id, manager);
+        if (!currentUser || currentUser.status !== EUserStatus.ACTIVE) {
+          throw new UnauthorizedException('Account unavailable');
+        }
+        const issued = await this.issueTokenPair(
+          manager.getRepository(RefreshSessionEntity),
+          currentUser,
+          crypto.randomUUID(),
+          meta,
+        );
+        return issued.pair;
+      },
+      { lockTimeoutMs: this.conf.transactionLockTimeoutMs },
+    );
   }
 
   async refresh(rawToken: string, meta: IClientMeta): Promise<ITokenPair> {
     const tokenHash = this.hash(rawToken);
-    const outcome = await this.dataSource.transaction<RefreshOutcome>(async (manager) => {
-      const repo = manager.getRepository(RefreshSessionEntity);
-      const session = await repo
-        .createQueryBuilder('session')
-        .setLock('pessimistic_write')
-        .where('session.tokenHash = :tokenHash', { tokenHash })
-        .getOne();
-
-      if (!session) {
-        return { ok: false, error: new UnauthorizedException('Invalid refresh token') };
-      }
-
-      if (session.replacedBy) {
-        if (this.isRecentRotation(session.revokedAt)) {
-          return {
-            ok: false,
-            error: new ConflictException({
-              code: 'AUTH_REFRESH_RACE',
-              message: 'Refresh already completed by another request',
-            }),
-          };
-        }
-        await this.revokeFamily(session.familyId, repo);
-        return { ok: false, error: new UnauthorizedException('Refresh token reuse detected') };
-      }
-
-      if (session.revokedAt) {
-        return { ok: false, error: new UnauthorizedException('Refresh token revoked') };
-      }
-      if (!dayjs().isBefore(session.expiresAt)) {
-        return { ok: false, error: new UnauthorizedException('Refresh token expired') };
-      }
-
-      const user = await this.usersService.findOneById(session.userId, manager);
-      if (!user || user.status !== EUserStatus.ACTIVE) {
-        await this.revokeFamily(session.familyId, repo);
-        return { ok: false, error: new UnauthorizedException('Account unavailable') };
-      }
-
-      const issued = await this.issueTokenPair(
-        repo,
-        user,
-        session.familyId,
-        meta,
-        session.expiresAt,
-      );
-      await repo.update(session.id, {
-        revokedAt: new Date(),
-        replacedBy: issued.sessionId,
-      });
-      return { ok: true, pair: issued.pair };
+    const identity = await this.sessionRepo.findOne({
+      select: { id: true, userId: true, familyId: true },
+      where: { tokenHash },
     });
+    if (!identity) throw new UnauthorizedException('Invalid refresh token');
+
+    const outcome = await runDatabaseTransaction<RefreshOutcome>(
+      this.dataSource,
+      async (manager) => {
+        const repo = manager.getRepository(RefreshSessionEntity);
+        // Every auth flow takes locks in the same order to avoid deadlocks.
+        await this.lockUser(manager, identity.userId);
+        await this.lockFamily(manager, identity.familyId);
+        const session = await repo
+          .createQueryBuilder('session')
+          .setLock('pessimistic_write')
+          .where('session.id = :id AND session.tokenHash = :tokenHash', {
+            id: identity.id,
+            tokenHash,
+          })
+          .getOne();
+
+        if (!session) {
+          return { ok: false, error: new UnauthorizedException('Invalid refresh token') };
+        }
+
+        if (session.replacedBy) {
+          if (this.isRecentRotation(session.revokedAt)) {
+            return {
+              ok: false,
+              error: new ConflictException({
+                code: 'AUTH_REFRESH_RACE',
+                message: 'Refresh already completed by another request',
+              }),
+            };
+          }
+          await this.revokeFamily(session.familyId, repo);
+          return { ok: false, error: new UnauthorizedException('Refresh token reuse detected') };
+        }
+
+        if (session.revokedAt) {
+          return { ok: false, error: new UnauthorizedException('Refresh token revoked') };
+        }
+        if (!dayjs().isBefore(session.expiresAt)) {
+          return { ok: false, error: new UnauthorizedException('Refresh token expired') };
+        }
+
+        const user = await this.usersService.findOneById(session.userId, manager);
+        if (!user || user.status !== EUserStatus.ACTIVE) {
+          await this.revokeFamily(session.familyId, repo);
+          return { ok: false, error: new UnauthorizedException('Account unavailable') };
+        }
+
+        const issued = await this.issueTokenPair(
+          repo,
+          user,
+          session.familyId,
+          meta,
+          session.expiresAt,
+        );
+        await repo.update(session.id, {
+          revokedAt: new Date(),
+          replacedBy: issued.sessionId,
+        });
+        return { ok: true, pair: issued.pair };
+      },
+      { lockTimeoutMs: this.conf.transactionLockTimeoutMs },
+    );
 
     if (!outcome.ok) throw outcome.error;
     return outcome.pair;
   }
 
   async logout(rawToken: string): Promise<void> {
-    await this.sessionRepo.update(
-      { tokenHash: this.hash(rawToken), revokedAt: IsNull() },
-      { revokedAt: new Date() },
+    const tokenHash = this.hash(rawToken);
+    const identity = await this.sessionRepo.findOne({
+      select: { id: true, userId: true, familyId: true },
+      where: { tokenHash },
+    });
+    if (!identity) return;
+
+    await runDatabaseTransaction(
+      this.dataSource,
+      async (manager) => {
+        await this.lockUser(manager, identity.userId);
+        await this.lockFamily(manager, identity.familyId);
+        await manager
+          .getRepository(RefreshSessionEntity)
+          .update({ id: identity.id, revokedAt: IsNull() }, { revokedAt: new Date() });
+      },
+      { lockTimeoutMs: this.conf.transactionLockTimeoutMs },
     );
   }
 
   async logoutAllDevices(userId: string): Promise<void> {
-    await this.sessionRepo.update({ userId, revokedAt: IsNull() }, { revokedAt: new Date() });
+    await runDatabaseTransaction(
+      this.dataSource,
+      async (manager) => {
+        await this.lockUser(manager, userId);
+        await manager
+          .getRepository(RefreshSessionEntity)
+          .update({ userId, revokedAt: IsNull() }, { revokedAt: new Date() });
+      },
+      { lockTimeoutMs: this.conf.transactionLockTimeoutMs },
+    );
   }
 
   private async issueTokenPair(
@@ -197,7 +263,24 @@ export class AuthService {
     return dayjs().diff(dayjs(revokedAt), 'second', true) <= this.conf.refreshRaceGraceSeconds;
   }
 
+  private lockUser(manager: EntityManager, userId: string): Promise<void> {
+    return acquireTransactionAdvisoryLock(manager, AUTH_USER_LOCK_NAMESPACE, userId);
+  }
+
+  private lockFamily(manager: EntityManager, familyId: string): Promise<void> {
+    return acquireTransactionAdvisoryLock(manager, AUTH_FAMILY_LOCK_NAMESPACE, familyId);
+  }
+
   private hash(token: string): string {
     return crypto.createHash('sha256').update(token).digest('hex');
+  }
+
+  private isEmailUniqueViolation(error: unknown): boolean {
+    if (!(error instanceof QueryFailedError)) return false;
+    const driverError = error.driverError as { code?: string; constraint?: string };
+    return (
+      driverError.code === '23505' &&
+      ['UQ_users_email', 'UQ_users_email_normalized'].includes(driverError.constraint ?? '')
+    );
   }
 }

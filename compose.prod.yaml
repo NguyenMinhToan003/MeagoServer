@@ -40,6 +40,8 @@ services:
       REDIS_PASSWORD_FILE: /run/secrets/redis_password
       JWT_ACCESS_SECRET_FILE: /run/secrets/jwt_access_secret
       CORS_ORIGINS: ${CORS_ORIGINS:?CORS_ORIGINS is required}
+      TRUST_PROXY_HOPS: ${TRUST_PROXY_HOPS:-1}
+      ENABLE_SWAGGER: ${ENABLE_SWAGGER:-false}
     secrets: &api-secrets
       - db_password
       - redis_password
@@ -50,9 +52,35 @@ services:
     tmpfs:
       - /tmp:size=32m,mode=1777
 
-  api:
+  bootstrap:
+    build:
+      context: .
+      target: runtime
+    restart: 'no'
+    init: true
     depends_on:
       migrate:
+        condition: service_completed_successfully
+    command: ['node', 'dist/database/seed.js']
+    environment:
+      <<: *api-environment
+      BOOTSTRAP_ADMIN_EMAIL: ${BOOTSTRAP_ADMIN_EMAIL:?BOOTSTRAP_ADMIN_EMAIL is required}
+      BOOTSTRAP_ADMIN_DISPLAY_NAME: ${BOOTSTRAP_ADMIN_DISPLAY_NAME:-Meago Administrator}
+      BOOTSTRAP_ADMIN_PASSWORD_FILE: /run/secrets/bootstrap_admin_password
+    secrets:
+      - db_password
+      - redis_password
+      - jwt_access_secret
+      - bootstrap_admin_password
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - /tmp:size=32m,mode=1777
+
+  api:
+    depends_on:
+      bootstrap:
         condition: service_completed_successfully
     environment: *api-environment
     secrets: *api-secrets
@@ -90,3 +118,5 @@ secrets:
     environment: REDIS_PASSWORD
   jwt_access_secret:
     environment: JWT_ACCESS_SECRET
+  bootstrap_admin_password:
+    environment: BOOTSTRAP_ADMIN_PASSWORD

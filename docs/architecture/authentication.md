@@ -15,9 +15,10 @@ Không chạy đồng thời hai mode cho cùng route nếu chưa có migration 
 - Refresh token là random opaque 256-bit, chỉ lưu SHA-256 hash trong database.
 - Refresh cookie là `HttpOnly`, `SameSite=Lax`, `Secure` ở production và giới hạn path auth.
 - Mỗi login tạo một token family và absolute expiry; rotation không kéo dài family vô hạn.
-- Consume refresh chạy trong transaction với pessimistic lock, tạo successor rồi đánh dấu token cũ đã thay thế.
+- Mọi mutation auth lấy transaction advisory lock theo thứ tự cố định `user -> refresh family`, sau đó rotation khóa session row bằng `FOR UPDATE`. Vì vậy rotate, reuse detection và logout-all không thể chạy xuyên qua nhau.
+- Lock wait có giới hạn bởi `AUTH_LOCK_TIMEOUT_MS`; không giữ transaction trong lúc gọi dịch vụ ngoài.
 - Race trong grace window trả `AUTH_REFRESH_RACE`; reuse thật revoke toàn family.
-- Client giữ access token trong memory và phối hợp refresh một lần trước khi retry request.
+- Client giữ access token trong memory: Promise tạo single-flight trong một tab; Web Lock bầu tab thực hiện rotation; BroadcastChannel chia sẻ kết quả cho các tab đang chờ.
 
 ## Session strategy tùy chọn
 
@@ -32,5 +33,7 @@ Password dùng Argon2id sau `PasswordHasher` port với `m=19456`, `t=2`, `p=1`.
 ## Security invariants
 
 - Raw refresh/session credential không xuất hiện trong DB, log, Sentry hoặc response ngoài điểm cấp credential.
-- Logout revoke session hiện tại; logout-all revoke toàn bộ credential của subject.
+- Logout revoke refresh session hiện tại; logout-all revoke mọi refresh session của subject. Access JWT đã cấp vẫn sống tối đa tới `exp`, nên TTL access phải ngắn; nếu dự án yêu cầu revoke access tức thời thì chọn stateful session hoặc session-version lookup.
 - JWT/session test phải kiểm tra issuer, audience, expiry, revoke, concurrent rotation và reuse.
+
+Email đăng nhập được trim/lowercase tại HTTP và service boundary; database giữ unique constraint cùng normalized-email check. Unique violation là lớp quyết định cuối và được map về `AUTH_EMAIL_ALREADY_EXISTS` thay vì lỗi 500.

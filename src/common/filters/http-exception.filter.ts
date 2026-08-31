@@ -60,6 +60,24 @@ export class TypeOrmExceptionFilter implements ExceptionFilter {
 
   catch(exception: TypeORMError, host: ArgumentsHost) {
     const ctx = host.switchToHttp();
+    const response = ctx.getResponse<Response>();
+    const driverCode = (exception as TypeORMError & { driverError?: { code?: string } }).driverError
+      ?.code;
+    if (driverCode && ['55P03', '40P01', '40001'].includes(driverCode)) {
+      response.setHeader('Retry-After', '1');
+      response
+        .status(HttpStatus.SERVICE_UNAVAILABLE)
+        .json(
+          buildBody(
+            HttpStatus.SERVICE_UNAVAILABLE,
+            'ConcurrencyUnavailable',
+            'The operation could not acquire a database lock; retry the complete request',
+            ctx.getRequest<Request>(),
+            { code: 'DATABASE_CONCURRENCY_RETRY', details: { retryable: true } },
+          ),
+        );
+      return;
+    }
     this.logger.error(exception.message, exception.stack);
     Sentry.captureException(exception);
     // không leak chi tiết SQL ra ngoài

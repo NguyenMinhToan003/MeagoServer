@@ -3,6 +3,14 @@ import * as Joi from 'joi';
 export const envValidationSchema = Joi.object({
   NODE_ENV: Joi.string().valid('development', 'production', 'test').default('development'),
   PORT: Joi.number().default(3000),
+  API_PREFIX: Joi.string().default('api'),
+  CORS_ORIGINS: Joi.string().when('NODE_ENV', {
+    is: 'production',
+    then: Joi.required(),
+    otherwise: Joi.allow('').optional(),
+  }),
+  TRUST_PROXY_HOPS: Joi.number().integer().min(0).max(10).default(0),
+  ENABLE_SWAGGER: Joi.string().valid('true', 'false').optional(),
   DB_HOST: Joi.string().required(),
   DB_PORT: Joi.number().default(5432),
   DB_USERNAME: Joi.string().required(),
@@ -24,6 +32,7 @@ export const envValidationSchema = Joi.object({
   REFRESH_RACE_GRACE_SECONDS: Joi.number().integer().min(0).max(30).default(5),
   REFRESH_COOKIE_NAME: Joi.string().default('meago_rt'),
   PERMISSION_CACHE_TTL_MS: Joi.number().default(300000),
+  AUTH_LOCK_TIMEOUT_MS: Joi.number().integer().min(100).max(30000).default(5000),
   APP_RELEASE: Joi.string().optional(),
   SENTRY_DSN: Joi.string().uri().allow('').optional(),
   SENTRY_DSN_FILE: Joi.string().optional(),

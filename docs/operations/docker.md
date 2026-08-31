@@ -39,11 +39,11 @@ docker compose -f compose.yaml -f compose.prod.yaml --profile app up -d --build
 Luồng khởi động:
 
 ```text
-PostgreSQL healthy -> migrate hoàn tất -> API healthy -> Web start
-Redis -------------------------------> cache tùy chọn của API
+PostgreSQL healthy -> migrate -> bootstrap admin -> API healthy -> Web start
+Redis -----------------------------------------------> cache tùy chọn của API
 ```
 
-`migrate` dùng đúng backend runtime image và chạy `migration:run:prod`; không chạy migration trong mỗi API replica. `DB_SYNCHRONIZE` luôn là `false` ở production.
+`migrate` và `bootstrap` dùng đúng backend runtime image; không chạy chúng trong mỗi API replica. `DB_SYNCHRONIZE` luôn là `false` ở production. Bootstrap idempotent và không reset mật khẩu admin đã tồn tại; xem [dữ liệu hệ thống mặc định](system-data.md).
 
 ## Runtime hardening đã áp dụng
 

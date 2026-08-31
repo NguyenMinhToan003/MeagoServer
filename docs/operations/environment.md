@@ -20,7 +20,7 @@
 ```bash
 npm run start:dev    # NODE_ENV=development (cross-env, chạy được trên Windows)
 npm run start:prod   # NODE_ENV=production, chạy dist/main
-npm run test:e2e     # NODE_ENV không tự set — export/set NODE_ENV=test trước khi chạy
+npm run test:e2e     # script cố định NODE_ENV=test trên mọi hệ điều hành
 ```
 
 ## Khác biệt dev vs prod vs test
@@ -33,8 +33,8 @@ npm run test:e2e     # NODE_ENV không tự set — export/set NODE_ENV=test tr�
 | CORS | localhost | domain thật | localhost |
 
 ## Chạy e2e test
-`test/jest-e2e.json` không tự đọc `.env.test` qua `ConfigModule` như app thật — cần Postgres/Redis đang chạy (dùng chung container dev, DB riêng `meago_test`) và `NODE_ENV=test` để `ConfigModule` trong `AppModule` nạp đúng file khi test bootstrap `AppModule` thật:
+E2E dùng cùng `configureHttpApplication()` với runtime thật, nên kiểm tra đúng prefix/version/pipe/cookie middleware. Cần PostgreSQL/Redis đang chạy, database riêng `meago_test` và credential trong `.env.test` phải khớp hạ tầng test:
 ```bash
 cp .env.test.example .env.test          # sửa nếu cần, mặc định trỏ DB_PORT=5433 (giống dev)
-NODE_ENV=test npm run test:e2e          # Windows PowerShell: $env:NODE_ENV="test"; npm run test:e2e
+npm run test:e2e
 ```

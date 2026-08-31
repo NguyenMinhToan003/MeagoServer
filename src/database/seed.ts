@@ -3,51 +3,99 @@ import dataSource from './data-source';
 import { RoleEntity } from 'src/modules/rbac/role.entity';
 import { PermissionEntity } from 'src/modules/rbac/permission.entity';
 import { UserEntity } from 'src/modules/users/user.entity';
-import { PERMISSIONS } from '@meago/core';
 import { Argon2PasswordHasher } from 'src/common/security/argon2-password-hasher.adapter';
+import { DEFAULT_SYSTEM_DATA, DEVELOPMENT_ADMIN_DEFAULTS } from './default-data';
 
-/**
- * Seed tối thiểu: permissions gốc + role "admin" full quyền + user admin.
- * Chạy: npm run seed  (idempotent — chạy lại không tạo trùng)
- */
-const permissionNames = Object.values(PERMISSIONS).flatMap((group) => Object.values(group));
+type BootstrapAdmin = {
+  email: string;
+  displayName: string;
+  password: string;
+};
 
-async function seed() {
-  const passwordHasher = new Argon2PasswordHasher();
-  await dataSource.initialize();
-  const permRepo = dataSource.getRepository(PermissionEntity);
-  const roleRepo = dataSource.getRepository(RoleEntity);
-  const userRepo = dataSource.getRepository(UserEntity);
+function resolveBootstrapAdmin(): BootstrapAdmin {
+  const isProduction = process.env.NODE_ENV === 'production';
+  const email = process.env.BOOTSTRAP_ADMIN_EMAIL?.trim().toLowerCase();
+  const displayName = process.env.BOOTSTRAP_ADMIN_DISPLAY_NAME?.trim();
+  const password = process.env.BOOTSTRAP_ADMIN_PASSWORD;
 
-  const perms: PermissionEntity[] = [];
-  for (const name of permissionNames) {
-    let p = await permRepo.findOneBy({ name });
-    if (!p) p = await permRepo.save(permRepo.create({ name }));
-    perms.push(p);
+  if (isProduction && (!email || !password)) {
+    throw new Error(
+      'BOOTSTRAP_ADMIN_EMAIL and BOOTSTRAP_ADMIN_PASSWORD are required in production',
+    );
   }
 
-  let admin = await roleRepo.findOne({ where: { name: 'admin' } });
-  if (!admin) admin = roleRepo.create({ name: 'admin', description: 'Full access' });
-  admin.permissions = perms;
-  admin = await roleRepo.save(admin);
+  const resolved = {
+    email: email ?? DEVELOPMENT_ADMIN_DEFAULTS.email,
+    displayName: displayName ?? DEVELOPMENT_ADMIN_DEFAULTS.displayName,
+    password: password ?? DEVELOPMENT_ADMIN_DEFAULTS.password,
+  };
 
-  const email = process.env.SEED_ADMIN_EMAIL ?? 'admin@meago.local';
-  let user = await userRepo.findOne({ where: { email }, relations: { roles: true } });
-  if (!user) {
-    user = userRepo.create({
-      email,
-      displayName: 'Admin',
-      passwordHash: await passwordHasher.hash(process.env.SEED_ADMIN_PASSWORD ?? 'admin12345'),
-    });
+  if (resolved.password.length < 12) {
+    throw new Error('BOOTSTRAP_ADMIN_PASSWORD must contain at least 12 characters');
   }
-  user.roles = [admin];
-  await userRepo.save(user);
-
-  console.log(`Seed done. Admin: ${email}`);
-  await dataSource.destroy();
+  return resolved;
 }
 
-seed().catch((err) => {
-  console.error(err);
+/**
+ * Idempotent bootstrap for mandatory permissions, the administrator role and the first admin.
+ * Existing admin passwords are never reset by deployment.
+ */
+async function seed(): Promise<void> {
+  const bootstrapAdmin = resolveBootstrapAdmin();
+  const passwordHasher = new Argon2PasswordHasher();
+  await dataSource.initialize();
+
+  try {
+    const result = await dataSource.transaction(async (manager) => {
+      const permissionRepo = manager.getRepository(PermissionEntity);
+      const roleRepo = manager.getRepository(RoleEntity);
+      const userRepo = manager.getRepository(UserEntity);
+
+      await permissionRepo.upsert(
+        DEFAULT_SYSTEM_DATA.permissions.map((name) => ({ name })),
+        ['name'],
+      );
+      const permissions = await permissionRepo.findBy(
+        DEFAULT_SYSTEM_DATA.permissions.map((name) => ({ name })),
+      );
+
+      const roleDefinition = DEFAULT_SYSTEM_DATA.roles.administrator;
+      let administrator = await roleRepo.findOne({ where: { name: roleDefinition.name } });
+      administrator ??= roleRepo.create(roleDefinition);
+      administrator.description = roleDefinition.description;
+      administrator.permissions = permissions;
+      administrator = await roleRepo.save(administrator);
+
+      let user = await userRepo.findOne({
+        where: { email: bootstrapAdmin.email },
+        relations: { roles: true },
+      });
+      const created = !user;
+      if (!user) {
+        user = userRepo.create({
+          email: bootstrapAdmin.email,
+          displayName: bootstrapAdmin.displayName,
+          passwordHash: await passwordHasher.hash(bootstrapAdmin.password),
+          roles: [],
+        });
+      }
+
+      if (!user.roles.some((role) => role.id === administrator.id)) {
+        user.roles.push(administrator);
+      }
+      await userRepo.save(user);
+      return { created };
+    });
+
+    console.log(
+      `System data ready. Administrator ${bootstrapAdmin.email} ${result.created ? 'created' : 'already exists'}.`,
+    );
+  } finally {
+    await dataSource.destroy();
+  }
+}
+
+seed().catch((error: unknown) => {
+  console.error('Failed to bootstrap system data', error);
   process.exit(1);
 });

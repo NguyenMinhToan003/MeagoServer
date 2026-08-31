@@ -11,6 +11,7 @@ export interface AuthConfig {
   refreshRaceGraceSeconds: number;
   refreshCookieName: string;
   permissionCacheTtlMs: number;
+  transactionLockTimeoutMs: number;
 }
 
 export default registerAs(AUTH_CONFIG, (): AuthConfig => ({
@@ -22,4 +23,5 @@ export default registerAs(AUTH_CONFIG, (): AuthConfig => ({
   refreshRaceGraceSeconds: parseInt(process.env.REFRESH_RACE_GRACE_SECONDS ?? '5', 10),
   refreshCookieName: process.env.REFRESH_COOKIE_NAME ?? 'meago_rt',
   permissionCacheTtlMs: parseInt(process.env.PERMISSION_CACHE_TTL_MS ?? '300000', 10),
+  transactionLockTimeoutMs: parseInt(process.env.AUTH_LOCK_TIMEOUT_MS ?? '5000', 10),
 }));

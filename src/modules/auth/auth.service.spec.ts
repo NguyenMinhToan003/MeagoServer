@@ -1,6 +1,7 @@
 import { UnauthorizedException } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { EUserStatus } from 'src/modules/users/user.entity';
+import { QueryFailedError } from 'typeorm';
 
 describe('AuthService', () => {
   const usersService = {
@@ -18,6 +19,11 @@ describe('AuthService', () => {
     create: jest.fn((value) => value),
     save: jest.fn(async (value) => ({ ...value, id: 'session-1' })),
     findOneBy: jest.fn(),
+    findOne: jest.fn().mockResolvedValue({
+      id: 'old',
+      userId: 'user-1',
+      familyId: 'family-1',
+    }),
     update: jest.fn(),
     createQueryBuilder: jest.fn(() => queryBuilder),
   };
@@ -30,9 +36,20 @@ describe('AuthService', () => {
     refreshRaceGraceSeconds: 5,
     refreshCookieName: 'meago_rt',
     permissionCacheTtlMs: 300000,
+    transactionLockTimeoutMs: 5000,
+  };
+  const transactionManager = {
+    queryRunner: { isTransactionActive: true },
+    query: jest.fn().mockResolvedValue(undefined),
+    getRepository: () => sessionRepo,
   };
   const dataSource = {
-    transaction: jest.fn(async (work) => work({ getRepository: () => sessionRepo })),
+    transaction: jest.fn(async (...args: unknown[]) => {
+      const work = args[args.length - 1] as (
+        manager: typeof transactionManager,
+      ) => Promise<unknown>;
+      return work(transactionManager);
+    }),
   };
   const passwordHasher = {
     hash: jest.fn(),
@@ -50,6 +67,39 @@ describe('AuthService', () => {
 
   beforeEach(() => jest.clearAllMocks());
 
+  it('normalizes identity fields before creating a user', async () => {
+    usersService.findByEmail.mockResolvedValue(null);
+    usersService.create.mockImplementation(async (value) => value);
+    passwordHasher.hash.mockResolvedValue('password-hash');
+
+    await service.register(' Admin@Example.COM ', ' Administrator ', 'password123');
+
+    expect(usersService.findByEmail).toHaveBeenCalledWith('admin@example.com');
+    expect(usersService.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        email: 'admin@example.com',
+        displayName: 'Administrator',
+      }),
+    );
+  });
+
+  it('maps the database uniqueness race to a stable conflict code', async () => {
+    usersService.findByEmail.mockResolvedValue(null);
+    passwordHasher.hash.mockResolvedValue('password-hash');
+    usersService.create.mockRejectedValue(
+      new QueryFailedError('INSERT INTO users', [], {
+        code: '23505',
+        constraint: 'UQ_users_email',
+      } as Error & { code: string; constraint: string }),
+    );
+
+    await expect(
+      service.register('admin@example.com', 'Admin', 'password123'),
+    ).rejects.toMatchObject({
+      response: expect.objectContaining({ code: 'AUTH_EMAIL_ALREADY_EXISTS' }),
+    });
+  });
+
   it('does not reveal whether an email exists during login', async () => {
     usersService.findByEmail.mockResolvedValue(null);
     passwordHasher.verifyOrDummy.mockResolvedValue(false);
@@ -64,6 +114,11 @@ describe('AuthService', () => {
       id: 'user-1',
       email: 'user@meago.test',
       passwordHash,
+      status: EUserStatus.ACTIVE,
+    });
+    usersService.findOneById.mockResolvedValue({
+      id: 'user-1',
+      email: 'user@meago.test',
       status: EUserStatus.ACTIVE,
     });
     jwtService.signAsync.mockResolvedValue('access-token');
@@ -146,6 +201,10 @@ describe('AuthService', () => {
       expect.objectContaining({ accessToken: 'rotated-access-token', refreshExpiresAt: expiresAt }),
     );
     expect(queryBuilder.setLock).toHaveBeenCalledWith('pessimistic_write');
+    expect(transactionManager.query.mock.calls.slice(1, 3)).toEqual([
+      ['SELECT pg_advisory_xact_lock($1, hashtext($2))', [1_294_638_201, 'user-1']],
+      ['SELECT pg_advisory_xact_lock($1, hashtext($2))', [1_294_638_202, 'family-1']],
+    ]);
     expect(sessionRepo.update).toHaveBeenCalledWith('old', {
       revokedAt: expect.any(Date),
       replacedBy: 'session-1',

@@ -122,3 +122,5 @@ src/modules/<domain>/
 ```
 
 Module khác giao tiếp qua service/port được export, không truy cập repository hoặc entity nội bộ của nhau. Use case nhiều module phải đặt transaction boundary tại service điều phối và truyền `EntityManager` rõ ràng.
+
+Quy tắc optimistic/pessimistic lock và transaction foundation được mô tả tại [Transaction và concurrency control](concurrency.md).

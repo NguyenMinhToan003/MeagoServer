@@ -17,7 +17,7 @@ user_roles(user_id, role_id)
 
 ## Cơ chế
 - Decorator `@RequirePermissions('story:create')` dùng `SetMetadata`.
-- `PermissionsGuard` chạy sau `JwtAuthGuard`: đọc metadata qua `Reflector`, load tập permission của user, so khớp.
+- `PermissionsGuard` chạy sau `AuthenticationGuard`: đọc `AuthPrincipal` và metadata qua `Reflector`, load tập permission của user, rồi so khớp.
 - **Cache** tập permission theo `user_id` (in-memory TTL 5–15 phút ban đầu, Redis khi scale), invalidate khi admin sửa role/permission.
 - KHÔNG nhét toàn bộ permissions vào JWT payload (token phình + không revoke được khi đổi quyền giữa chừng).
 

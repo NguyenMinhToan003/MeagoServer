@@ -13,9 +13,12 @@ export const envValidationSchema = Joi.object({
   REDIS_PORT: Joi.number().default(6379),
   REDIS_PASSWORD: Joi.string().allow('').optional(),
   REDIS_DB: Joi.number().default(0),
-  JWT_ACCESS_SECRET: Joi.string().min(16).required(),
+  JWT_ACCESS_SECRET: Joi.string().min(32).required(),
   JWT_ACCESS_TTL: Joi.string().default('15m'),
+  JWT_ISSUER: Joi.string().default('meago-server'),
+  JWT_AUDIENCE: Joi.string().default('meago-client'),
   REFRESH_TOKEN_TTL_DAYS: Joi.number().default(14),
+  REFRESH_RACE_GRACE_SECONDS: Joi.number().integer().min(0).max(30).default(5),
   REFRESH_COOKIE_NAME: Joi.string().default('meago_rt'),
   PERMISSION_CACHE_TTL_MS: Joi.number().default(300000),
 });

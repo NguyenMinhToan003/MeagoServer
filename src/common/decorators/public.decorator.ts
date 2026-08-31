@@ -1,5 +1,5 @@
 import { SetMetadata } from '@nestjs/common';
 
 export const IS_PUBLIC_KEY = 'isPublic';
-/** Bỏ qua JwtAuthGuard (guard là global default-deny, route public phải opt-in). */
+/** Bỏ qua AuthenticationGuard; route public phải opt-in rõ ràng. */
 export const Public = () => SetMetadata(IS_PUBLIC_KEY, true);

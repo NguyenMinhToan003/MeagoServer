@@ -2,11 +2,9 @@ import { Column, Entity, JoinTable, ManyToMany } from 'typeorm';
 import { Exclude } from 'class-transformer';
 import { BaseEntity } from 'src/common/abstracts/base.entity';
 import { RoleEntity } from 'src/modules/rbac/role.entity';
+import { EUserStatus } from '@meago/core';
 
-export enum EUserStatus {
-  ACTIVE = 'active',
-  BLOCKED = 'blocked',
-}
+export { EUserStatus } from '@meago/core';
 
 @Entity('users')
 export class UserEntity extends BaseEntity {

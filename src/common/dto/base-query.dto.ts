@@ -1,5 +1,6 @@
 import { Type } from 'class-transformer';
 import { IsInt, IsOptional, IsString, Max, Min, IsIn } from 'class-validator';
+import { IBaseQuery } from '@meago/core';
 
 export type SortDir = 'ASC' | 'DESC';
 
@@ -8,7 +9,7 @@ export type SortDir = 'ASC' | 'DESC';
  * (Phiên bản gọn + validate của AQueries trong source mẫu — dùng number thật
  * thay vì string thô, tránh cast thủ công rải rác)
  */
-export class BaseQueryDto {
+export class BaseQueryDto implements IBaseQuery {
   @IsOptional()
   @Type(() => Number)
   @IsInt()

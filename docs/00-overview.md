@@ -10,6 +10,8 @@ Version cụ thể luôn lấy theo `package.json` — mục này chỉ ghi majo
 
 ## Cấu trúc
 
+Sơ đồ dependency, authentication/refresh flow và quy tắc module được duy trì tại [07-system-structure.md](07-system-structure.md).
+
 ```
 src/
   configs/        # registerAs() factories + Joi env validation
@@ -18,9 +20,10 @@ src/
     decorators/   #   @Public, @RequirePermissions, @CurrentUser
     dto/          #   BaseQueryDto (page/limit/sort/search)
     filters/      #   HttpExceptionFilter, TypeOrmExceptionFilter
-    guards/       #   JwtAuthGuard (global), PermissionsGuard (global)
+    auth/         #   AuthenticationPort và injection token
+    guards/       #   AuthenticationGuard (global), PermissionsGuard (global)
     interceptors/ #   TransformInterceptor (wrap response chuẩn)
-    interfaces/   #   IBaseResponse, IPaginatedResult
+    interfaces/   #   Interface nội bộ Server; shared contract lấy từ @meago/core
     middlewares/  #   LoggerMiddleware
   libraries/
     redis/        # RedisModule global — cache dùng chung (fail-open)
@@ -37,7 +40,7 @@ test/
 
 1. **Mọi entity extends `BaseEntity`** (uuid, version, timestamps) hoặc `TrackingEntity` (+ createdBy/updatedBy).
 2. **Service CRUD extends `BaseService<T>`** — có sẵn create/findMulti(pagination+search)/update/removeMulti. Method nào cần transaction: gọi `runInTransaction(manager => ...)` và truyền `manager` xuống các method con (idiom threading EntityManager).
-3. **Route mặc định yêu cầu đăng nhập** (JwtAuthGuard global). Public phải gắn `@Public()`. Cần quyền: `@RequirePermissions('story:create')`.
+3. **Route mặc định yêu cầu đăng nhập** qua `AuthenticationGuard` và `AuthenticationPort`. Public phải gắn `@Public()`. Cần quyền: `@RequirePermissions('story:create')`.
 4. **Response** tự wrap `{statusCode, message, data, timestamp}`; lỗi thống nhất `{statusCode, error, message, path, timestamp}`.
 5. **Module mới** đặt trong `src/modules/<domain>/`, đủ entity/dto/service/controller/module; không import entity của module khác — giao tiếp qua service export.
 6. **Prod dùng migration** (`npm run migration:generate|run`), `DB_SYNCHRONIZE=true` chỉ ở local dev.
@@ -51,6 +54,7 @@ test/
 - `04-audio-story-architecture.md` — nghiên cứu kiến trúc audio/truyện (CHƯA code, định hướng)
 - `05-environments.md` — cấu hình env development/production
 - `06-docker.md` — Dockerfile multi-stage + docker compose
+- `07-system-structure.md` — sơ đồ cấu trúc BE, hướng dependency và các flow chính
 
 ## Chạy
 

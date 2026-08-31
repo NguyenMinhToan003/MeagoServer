@@ -1,7 +1,7 @@
 import { CallHandler, ExecutionContext, Injectable, NestInterceptor } from '@nestjs/common';
 import { Response } from 'express';
 import { Observable, map } from 'rxjs';
-import { IBaseResponse } from '../interfaces/response.interface';
+import { IBaseResponse } from '@meago/core';
 
 /**
  * Gói mọi response thành IBaseResponse thống nhất

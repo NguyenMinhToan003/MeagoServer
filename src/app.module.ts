@@ -14,7 +14,7 @@ import {
 } from './common/filters/http-exception.filter';
 import { TransformInterceptor } from './common/interceptors/transform.interceptor';
 import { LoggerMiddleware } from './common/middlewares/logger.middleware';
-import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
+import { AuthenticationGuard } from './common/guards/authentication.guard';
 import { PermissionsGuard } from './common/guards/permissions.guard';
 import { RedisModule } from './libraries/redis/redis.module';
 import { UsersModule } from './modules/users/users.module';
@@ -44,7 +44,7 @@ import { HealthModule } from './modules/health/health.module';
   providers: [
     { provide: APP_GUARD, useClass: ThrottlerGuard },
     // thứ tự quan trọng: auth trước, permission sau
-    { provide: APP_GUARD, useClass: JwtAuthGuard },
+    { provide: APP_GUARD, useClass: AuthenticationGuard },
     { provide: APP_GUARD, useClass: PermissionsGuard },
     { provide: APP_FILTER, useClass: HttpExceptionFilter },
     { provide: APP_FILTER, useClass: TypeOrmExceptionFilter },

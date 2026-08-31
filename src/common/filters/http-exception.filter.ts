@@ -10,12 +10,20 @@ import { Request, Response } from 'express';
 import { TypeORMError } from 'typeorm';
 
 /** Shape lỗi thống nhất (theo errors.middleware của source mẫu). */
-const buildBody = (status: number, error: string, message: unknown, req: Request) => ({
+const buildBody = (
+  status: number,
+  error: string,
+  message: unknown,
+  req: Request,
+  metadata: { code?: string; details?: unknown } = {},
+) => ({
   statusCode: status,
   error,
   message,
   path: req.url,
   timestamp: new Date().toISOString(),
+  ...(metadata.code === undefined ? {} : { code: metadata.code }),
+  ...(metadata.details === undefined ? {} : { details: metadata.details }),
 });
 
 @Catch(HttpException)
@@ -23,7 +31,12 @@ export class HttpExceptionFilter implements ExceptionFilter {
   catch(exception: HttpException, host: ArgumentsHost) {
     const ctx = host.switchToHttp();
     const status = exception.getStatus();
-    const resBody = exception.getResponse() as { message?: unknown; error?: string };
+    const resBody = exception.getResponse() as {
+      message?: unknown;
+      error?: string;
+      code?: string;
+      details?: unknown;
+    };
     ctx
       .getResponse<Response>()
       .status(status)
@@ -33,6 +46,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
           resBody.error ?? exception.name,
           resBody.message ?? exception.message,
           ctx.getRequest<Request>(),
+          { code: resBody.code, details: resBody.details },
         ),
       );
   }

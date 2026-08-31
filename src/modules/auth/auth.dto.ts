@@ -1,6 +1,7 @@
 import { IsEmail, IsNotEmpty, IsString, MinLength } from 'class-validator';
+import { ILoginDto, IRegisterDto } from '@meago/core';
 
-export class RegisterDto {
+export class RegisterDto implements IRegisterDto {
   @IsEmail()
   email: string;
 
@@ -13,7 +14,7 @@ export class RegisterDto {
   password: string;
 }
 
-export class LoginDto {
+export class LoginDto implements ILoginDto {
   @IsEmail()
   email: string;
 

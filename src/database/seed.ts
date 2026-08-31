@@ -4,20 +4,13 @@ import dataSource from './data-source';
 import { RoleEntity } from 'src/modules/rbac/role.entity';
 import { PermissionEntity } from 'src/modules/rbac/permission.entity';
 import { UserEntity } from 'src/modules/users/user.entity';
+import { PERMISSIONS } from '@meago/core';
 
 /**
  * Seed tối thiểu: permissions gốc + role "admin" full quyền + user admin.
  * Chạy: npm run seed  (idempotent — chạy lại không tạo trùng)
  */
-const PERMISSIONS = [
-  'user:read',
-  'user:manage',
-  'role:read',
-  'role:manage',
-  'story:create',
-  'story:read',
-  'story:manage',
-];
+const permissionNames = Object.values(PERMISSIONS).flatMap((group) => Object.values(group));
 
 async function seed() {
   await dataSource.initialize();
@@ -26,7 +19,7 @@ async function seed() {
   const userRepo = dataSource.getRepository(UserEntity);
 
   const perms: PermissionEntity[] = [];
-  for (const name of PERMISSIONS) {
+  for (const name of permissionNames) {
     let p = await permRepo.findOneBy({ name });
     if (!p) p = await permRepo.save(permRepo.create({ name }));
     perms.push(p);

@@ -10,6 +10,8 @@ Nền tảng đăng tải, chia sẻ **audio / truyện** — NestJS + PostgreSQ
 - [04 — Nghiên cứu kiến trúc audio/truyện](docs/04-audio-story-architecture.md)
 - [05 — Env development/production](docs/05-environments.md)
 - [06 — Docker](docs/06-docker.md)
+- [07 — Sơ đồ cấu trúc BE](docs/07-system-structure.md)
+- [Nguồn draw.io kiến trúc BE](docs/diagrams/backend-architecture.drawio)
 
 ## Quick start
 

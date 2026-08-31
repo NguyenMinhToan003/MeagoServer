@@ -10,7 +10,7 @@ import {
   Repository,
 } from 'typeorm';
 import { BaseQueryDto } from '../dto/base-query.dto';
-import { IPaginatedResult } from '../interfaces/response.interface';
+import { IPaginatedResult } from '@meago/core';
 
 /**
  * Generic CRUD service — core rút gọn từ AActionsModel của EvoAutomationServer.

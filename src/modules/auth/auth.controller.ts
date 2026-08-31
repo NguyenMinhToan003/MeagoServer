@@ -14,7 +14,8 @@ import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { Request, Response } from 'express';
 import authConfig from 'src/configs/auth.config';
 import { Public } from 'src/common/decorators/public.decorator';
-import { CurrentUser, IJwtUser } from 'src/common/decorators/current-user.decorator';
+import { CurrentUser } from 'src/common/decorators/current-user.decorator';
+import type { AuthPrincipal } from '@meago/core';
 import { AuthService, ITokenPair } from './auth.service';
 import { LoginDto, RegisterDto } from './auth.dto';
 import { UsersService } from 'src/modules/users/users.service';
@@ -74,17 +75,17 @@ export class AuthController {
   @ApiBearerAuth()
   @HttpCode(200)
   @Post('logout-all')
-  async logoutAll(@CurrentUser() user: IJwtUser, @Res({ passthrough: true }) res: Response) {
-    await this.authService.logoutAllDevices(user.sub);
+  async logoutAll(@CurrentUser() user: AuthPrincipal, @Res({ passthrough: true }) res: Response) {
+    await this.authService.logoutAllDevices(user.subjectId);
     this.clearRefreshCookie(res);
     return { success: true };
   }
 
   @ApiBearerAuth()
   @Get('me')
-  async me(@CurrentUser() user: IJwtUser) {
-    const found = await this.usersService.findOneByIdOrFail(user.sub);
-    const permissions = await this.rbacService.getUserPermissions(user.sub);
+  async me(@CurrentUser() user: AuthPrincipal) {
+    const found = await this.usersService.findOneByIdOrFail(user.subjectId);
+    const permissions = await this.rbacService.getUserPermissions(user.subjectId);
     return {
       id: found.id,
       email: found.email,

@@ -6,7 +6,7 @@ Trạng thái: **Implemented foundation** — 2026-08-31.
 
 `nestjs-pino` là HTTP/application logger duy nhất. Middleware log request thủ công đã bị loại bỏ để tránh duplicate record.
 
-- Development dùng `pino-pretty`; production phát JSON một dòng.
+- Development dùng `pino-pretty` với giờ local dạng `HH:mm:ss`, context gọn trong message và ẩn metadata lặp (`pid`, `hostname`, `service`, `environment`). Production vẫn phát JSON một dòng đầy đủ để hệ thống thu thập log xử lý.
 - Mỗi request có `x-request-id`; ID hợp lệ từ upstream được giữ, nếu không Server tạo UUID.
 - Log có `service` và `environment` để query tập trung.
 - Authorization, cookie, set-cookie, password và token bị redact.

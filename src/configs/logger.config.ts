@@ -1,10 +1,14 @@
 import { randomUUID } from 'crypto';
+import { RequestMethod } from '@nestjs/common';
 import { Params } from 'nestjs-pino';
 
 export function createLoggerConfig(environment: string): Params {
   const isDevelopment = environment === 'development';
 
   return {
+    // Nest 11/path-to-regexp requires a named wildcard; nestjs-pino's legacy
+    // default `*` otherwise emits LegacyRouteConverter warnings at startup.
+    forRoutes: [{ path: '{*path}', method: RequestMethod.ALL }],
     pinoHttp: {
       level: isDevelopment ? 'debug' : 'info',
       genReqId: (request, response) => {
@@ -32,7 +36,13 @@ export function createLoggerConfig(environment: string): Params {
       transport: isDevelopment
         ? {
             target: 'pino-pretty',
-            options: { colorize: true, singleLine: true, translateTime: 'SYS:standard' },
+            options: {
+              colorize: true,
+              singleLine: true,
+              translateTime: 'SYS:HH:MM:ss',
+              messageFormat: '{if context}[{context}] {end}{msg}',
+              ignore: 'pid,hostname,context,service,environment',
+            },
           }
         : undefined,
     },

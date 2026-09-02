@@ -12,6 +12,10 @@ Trạng thái: **Implemented foundation** — 2026-08-31.
 - Authorization, cookie, set-cookie, password và token bị redact.
 - Không log request/response body mặc định.
 
+Audit trail không được trộn với Pino/Sentry. Lịch sử action có actor/resource/outcome được lưu
+append-only trong PostgreSQL theo [Audit trail](../architecture/audit-trail.md); Pino vẫn là operational
+log và request access log. Hai luồng dùng chung request ID để correlation.
+
 ## Sentry
 
 Sentry chỉ bật khi `SENTRY_DSN` có giá trị. `SENTRY_TRACES_SAMPLE_RATE` nằm trong `[0,1]`; development/test mặc định `0`.

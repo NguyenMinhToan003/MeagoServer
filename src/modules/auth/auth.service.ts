@@ -22,6 +22,9 @@ export interface ITokenPair {
   accessToken: string;
   refreshToken: string;
   refreshExpiresAt: Date;
+  /** Internal audit/session context; controllers do not expose these fields. */
+  userId: string;
+  sessionId: string;
 }
 
 export interface IClientMeta {
@@ -246,7 +249,13 @@ export class AuthService {
       },
     );
     return {
-      pair: { accessToken, refreshToken, refreshExpiresAt },
+      pair: {
+        accessToken,
+        refreshToken,
+        refreshExpiresAt,
+        userId: user.id,
+        sessionId: session.id,
+      },
       sessionId: session.id,
     };
   }

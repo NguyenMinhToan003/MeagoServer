@@ -60,6 +60,7 @@ Mọi code mới hoặc boundary đang sửa phải tuân thủ `docs/standards/
 | Upload/storage | `docs/architecture/upload.md` |
 | Env/Docker/bootstrap | `docs/operations/environment.md`, `docker.md`, `system-data.md` |
 | Logging/Sentry/health/throttle | `docs/operations/observability-security.md` |
+| Audit action/schema/retention | `docs/architecture/audit-trail.md`, observability docs và migration tương ứng |
 | Dependency | `docs/reference/technology-stack.md` |
 | Query, sorting, pagination, database index | `docs/standards/database-query-rules.md` và migration tương ứng |
 | Coding convention hoặc invariant xuyên layer | `docs/standards/coding-rules.md` |

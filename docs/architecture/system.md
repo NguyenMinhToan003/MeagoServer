@@ -27,6 +27,7 @@ src/
 │  ├─ auth/              # Login, refresh, logout, JWT adapter
 │  ├─ users/             # User domain
 │  ├─ rbac/              # Role và permission domain
+│  ├─ audit/             # Append-only user action trail, decorator/interceptor/query
 │  └─ health/            # Health checks
 ├─ app.module.ts         # Composition root
 └─ main.ts               # HTTP bootstrap
@@ -124,3 +125,6 @@ src/modules/<domain>/
 Module khác giao tiếp qua service/port được export, không truy cập repository hoặc entity nội bộ của nhau. Use case nhiều module phải đặt transaction boundary tại service điều phối và truyền `EntityManager` rõ ràng.
 
 Quy tắc optimistic/pessimistic lock và transaction foundation được mô tả tại [Transaction và concurrency control](concurrency.md).
+
+Audit action xuyên module dùng boundary tại [Audit trail](audit-trail.md). Interceptor chỉ thu HTTP
+context/outcome cho route opt-in; mutation cần atomic audit phải gọi AuditService trong transaction.

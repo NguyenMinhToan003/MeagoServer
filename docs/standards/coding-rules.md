@@ -89,6 +89,11 @@ Lỗi bị cấm:
 - Không `console.log` trong runtime production code.
 - Sentry/monitoring không được nhận PII/secret chưa redaction.
 - Job/message handler phải idempotent hoặc có deduplication key khi có thể delivery lại.
+- Route mutation/sensitive action phải khai báo action ổn định theo chuẩn audit; không dùng URL,
+  controller method hoặc message hiển thị làm audit action.
+- Interceptor audit không được dump body/entity. Business metadata phải allowlist; mutation cần audit
+  atomic phải gọi `recordRequired` với cùng `EntityManager`.
+- Không update/delete audit event qua application code. Retention là operation được phê duyệt.
 
 ## 7. Test và review
 
@@ -108,4 +113,3 @@ Checklist trước bàn giao:
 - [ ] Test bao phủ happy path, invalid input, conflict và failure quan trọng.
 - [ ] Docs/migration/env/example được cập nhật cùng code.
 - [ ] Các gate trong [quality-gates.md](quality-gates.md) đạt.
-

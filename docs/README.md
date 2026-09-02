@@ -18,9 +18,10 @@ Tài liệu được tổ chức theo mục đích:
 3. [Cấu trúc hệ thống](architecture/system.md)
 4. [Authentication](architecture/authentication.md)
 5. [Transaction và concurrency](architecture/concurrency.md)
-6. [Quy tắc coding backend](standards/coding-rules.md)
-7. [Quy tắc truy vấn và phân trang](standards/database-query-rules.md)
-8. [Quality gates](standards/quality-gates.md)
+6. [Audit trail](architecture/audit-trail.md)
+7. [Quy tắc coding backend](standards/coding-rules.md)
+8. [Quy tắc truy vấn và phân trang](standards/database-query-rules.md)
+9. [Quality gates](standards/quality-gates.md)
 
 Dữ liệu mặc định và tài khoản quản trị: [System data bootstrap](operations/system-data.md).
 

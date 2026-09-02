@@ -1,11 +1,15 @@
 import { PERMISSIONS } from '@meago/core';
+import { AUDIT_PERMISSIONS } from 'src/modules/audit/core/audit.types';
 
 /**
  * Single source of truth for mandatory system data.
  * Credentials never belong here; they must come from environment or a secret manager.
  */
 export const DEFAULT_SYSTEM_DATA = {
-  permissions: Object.values(PERMISSIONS).flatMap((group) => Object.values(group)),
+  permissions: [
+    ...Object.values(PERMISSIONS).flatMap((group) => Object.values(group)),
+    AUDIT_PERMISSIONS.READ,
+  ],
   roles: {
     administrator: {
       name: 'admin',

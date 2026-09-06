@@ -4,7 +4,11 @@ describe('JwtAuthenticationAdapter', () => {
   const verifyAsync = jest.fn();
   const adapter = new JwtAuthenticationAdapter(
     { verifyAsync } as never,
-    { accessSecret: 'test-secret', issuer: 'meago-server', audience: 'meago-client' } as never,
+    {
+      jwtAccessSecret: 'test-secret',
+      jwtIssuer: 'meago-server',
+      jwtAudience: 'meago-client',
+    } as never,
   );
 
   beforeEach(() => jest.clearAllMocks());

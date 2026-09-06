@@ -54,7 +54,11 @@ Khi vượt ngưỡng, `ThrottlerGuard` dừng request trước controller và t
 - `GET /api/v1/health/ready`: PostgreSQL sẵn sàng.
 - `GET /api/v1/health`: compatibility alias của readiness hiện tại.
 
-Redis là cache fail-open nên không làm readiness fail. Cần quan sát Redis qua log/metrics riêng; nếu Redis trở thành dependency bắt buộc cho session hoặc distributed throttling thì phải đưa Redis vào readiness.
+Ở `AUTH_MODE=jwt`, Redis là cache fail-open nên không làm readiness fail. Ở `AUTH_MODE=session`, readiness bao gồm `redis` (PING) vì Redis nằm trên hot path xác thực; app vẫn tự rơi về PostgreSQL khi Redis lỗi nhưng độ trễ tăng, nên phải hiện trên readiness. Distributed throttling khi có cũng phải đưa Redis vào readiness.
+
+## CSRF
+
+Chỉ áp dụng ở `AUTH_MODE=session` (cookie được trình duyệt gửi tự động). `CsrfGuard` chạy trước `AuthenticationGuard`, yêu cầu header `X-Requested-With: XMLHttpRequest` trên mọi method không an toàn và trả `403 AUTH_CSRF_HEADER_REQUIRED` khi thiếu. Kết hợp `SameSite=Lax` và CORS chỉ allow origin frontend. JWT mode dùng Bearer header nên guard là no-op. Double-submit token chưa cần vì không có form server-render.
 
 ## Gate trước production
 

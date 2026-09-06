@@ -1,6 +1,6 @@
 <mxfile host="65bd71144e">
     <diagram id="meago-be" name="MeagoServer Architecture">
-        <mxGraphModel dx="488" dy="513" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1600" pageHeight="900" math="0" shadow="0">
+        <mxGraphModel dx="498" dy="770" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1600" pageHeight="900" math="0" shadow="0">
             <root>
                 <mxCell id="0"/>
                 <mxCell id="1" parent="0"/>
@@ -94,6 +94,571 @@
                             <mxPoint x="610" y="680"/>
                         </Array>
                     </mxGeometry>
+                </mxCell>
+            </root>
+        </mxGraphModel>
+    </diagram>
+    <diagram id="auth-overview" name="Auth · Overview">
+        <mxGraphModel dx="685" dy="770" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1400" pageHeight="1000" math="0" shadow="0">
+            <root>
+                <mxCell id="0"/>
+                <mxCell id="1" parent="0"/>
+                <mxCell id="auth-overview-1" value="AUTH · TỔNG QUAN 4 LUỒNG × 2 MODE" style="text;html=1;align=left;verticalAlign=middle;fontSize=24;fontStyle=1;fontColor=#1F2A44;" parent="1" vertex="1">
+                    <mxGeometry x="40" y="20" width="1100" height="40" as="geometry"/>
+                </mxCell>
+                <mxCell id="auth-overview-2" value="AUTH_MODE chọn một bộ (adapter, strategy, http transport) tại AuthModule. Controller/guard không có if(mode). Mỗi ô ghi tên page chi tiết trong file này." style="text;html=1;align=left;verticalAlign=middle;fontSize=13;fontColor=#6B7385;" parent="1" vertex="1">
+                    <mxGeometry x="40" y="58" width="1300" height="26" as="geometry"/>
+                </mxCell>
+                <mxCell id="auth-overview-3" value="Luồng" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F1F3F7;strokeColor=#DDE1E8;fontColor=#6B7385;fontStyle=1;fontSize=13;" parent="1" vertex="1">
+                    <mxGeometry x="40" y="110" width="250" height="56" as="geometry"/>
+                </mxCell>
+                <mxCell id="auth-overview-4" value="&lt;b&gt;AUTH_MODE=jwt&lt;/b&gt; · stateless&lt;br&gt;&lt;font style=&quot;font-size:11px&quot;&gt;Bearer header · refresh_sessions · 0 I/O mỗi request&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FBF1E6;strokeColor=#B25E09;fontColor=#B25E09;fontSize=14;" parent="1" vertex="1">
+                    <mxGeometry x="302" y="110" width="470" height="56" as="geometry"/>
+                </mxCell>
+                <mxCell id="auth-overview-5" value="&lt;b&gt;AUTH_MODE=session&lt;/b&gt; · stateful&lt;br&gt;&lt;font style=&quot;font-size:11px&quot;&gt;Cookie meago_sid · auth_sessions + Redis cache · revoke tức thì&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E6F3F0;strokeColor=#0F7B6C;fontColor=#0F7B6C;fontSize=14;" parent="1" vertex="1">
+                    <mxGeometry x="784" y="110" width="470" height="56" as="geometry"/>
+                </mxCell>
+                <mxCell id="auth-overview-6" value="&lt;b&gt;1 · Đăng nhập&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:11px;color:#6B7385&quot;&gt;POST /auth/login&lt;/font&gt;&lt;br&gt;&lt;br&gt;&lt;font style=&quot;font-size:11px;color:#6B7385&quot;&gt;→ page: Auth · Login&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#DDE1E8;fontColor=#1F2A44;fontSize=13;align=left;spacingLeft=10;verticalAlign=top;spacingTop=8;" parent="1" vertex="1">
+                    <mxGeometry x="40" y="178" width="250" height="150" as="geometry"/>
+                </mxCell>
+                <mxCell id="auth-overview-7" value="Xác minh email/password chung (Argon2id + dummy verify).&lt;br&gt;Lock user → INSERT refresh_sessions (family mới, sha256 token) → ký JWT 15m.&lt;br&gt;Trả {accessToken, expiresIn} + cookie meago_rt (path /api/v1/auth)." style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#B25E09;fontColor=#1F2A44;fontSize=11;align=left;spacingLeft=10;spacingRight=8;verticalAlign=top;spacingTop=8;" parent="1" vertex="1">
+                    <mxGeometry x="302" y="178" width="470" height="150" as="geometry"/>
+                </mxCell>
+                <mxCell id="auth-overview-8" value="Xác minh email/password chung.&lt;br&gt;sid 256-bit → INSERT auth_sessions (sha256, idle 30m, absolute 14d) → SADD user set, KHÔNG SET record.&lt;br&gt;Trả {expiresAt} + cookie meago_sid (path /)." style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#0F7B6C;fontColor=#1F2A44;fontSize=11;align=left;spacingLeft=10;spacingRight=8;verticalAlign=top;spacingTop=8;" parent="1" vertex="1">
+                    <mxGeometry x="784" y="178" width="470" height="150" as="geometry"/>
+                </mxCell>
+                <mxCell id="auth-overview-9" value="&lt;b&gt;2 · Xác minh mỗi request&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:11px;color:#6B7385&quot;&gt;AuthenticationGuard&lt;/font&gt;&lt;br&gt;&lt;br&gt;&lt;font style=&quot;font-size:11px;color:#6B7385&quot;&gt;→ page: Auth · Request verification&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#DDE1E8;fontColor=#1F2A44;fontSize=13;align=left;spacingLeft=10;verticalAlign=top;spacingTop=8;" parent="1" vertex="1">
+                    <mxGeometry x="40" y="340" width="250" height="150" as="geometry"/>
+                </mxCell>
+                <mxCell id="auth-overview-10" value="Authorization: Bearer → JwtAuthenticationAdapter.&lt;br&gt;Verify HS256 · iss · aud · exp · sub/sid/jti — 0 I/O.&lt;br&gt;Cookie bị bỏ qua. Không thu hồi được trước exp." style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#B25E09;fontColor=#1F2A44;fontSize=11;align=left;spacingLeft=10;spacingRight=8;verticalAlign=top;spacingTop=8;" parent="1" vertex="1">
+                    <mxGeometry x="302" y="340" width="470" height="150" as="geometry"/>
+                </mxCell>
+                <mxCell id="auth-overview-11" value="Cookie meago_sid → CsrfGuard → SessionAuthenticationAdapter.&lt;br&gt;GET auth:sess:{sha256} → miss/lỗi → SELECT auth_sessions → SET PX≤300s.&lt;br&gt;Touch ≥60s: UPDATE rồi DEL. Bearer bị bỏ qua." style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#0F7B6C;fontColor=#1F2A44;fontSize=11;align=left;spacingLeft=10;spacingRight=8;verticalAlign=top;spacingTop=8;" parent="1" vertex="1">
+                    <mxGeometry x="784" y="340" width="470" height="150" as="geometry"/>
+                </mxCell>
+                <mxCell id="auth-overview-12" value="&lt;b&gt;3 · Vòng đời token&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:11px;color:#6B7385&quot;&gt;/auth/refresh · /logout · /logout-all&lt;/font&gt;&lt;br&gt;&lt;br&gt;&lt;font style=&quot;font-size:11px;color:#6B7385&quot;&gt;→ page: Auth · Refresh &amp; revoke&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#DDE1E8;fontColor=#1F2A44;fontSize=13;align=left;spacingLeft=10;verticalAlign=top;spacingTop=8;" parent="1" vertex="1">
+                    <mxGeometry x="40" y="502" width="250" height="150" as="geometry"/>
+                </mxCell>
+                <mxCell id="auth-overview-13" value="Rotation trong family, expiresAt giữ nguyên (absolute).&lt;br&gt;Token cũ dùng lại: &lt;5s → 409 AUTH_REFRESH_RACE; muộn hơn → revoke cả family → 401.&lt;br&gt;Lock user → family → FOR UPDATE." style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#B25E09;fontColor=#1F2A44;fontSize=11;align=left;spacingLeft=10;spacingRight=8;verticalAlign=top;spacingTop=8;" parent="1" vertex="1">
+                    <mxGeometry x="302" y="502" width="470" height="150" as="geometry"/>
+                </mxCell>
+                <mxCell id="auth-overview-14" value="Rotate ID giữ absolute, idle = now+30m.&lt;br&gt;UPDATE cũ WHERE revokedAt IS NULL — affected=0 → 401 Session already rotated.&lt;br&gt;Sau commit: DEL key cũ, SADD key mới. logout-all: SMEMBERS → DEL mọi key." style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#0F7B6C;fontColor=#1F2A44;fontSize=11;align=left;spacingLeft=10;spacingRight=8;verticalAlign=top;spacingTop=8;" parent="1" vertex="1">
+                    <mxGeometry x="784" y="502" width="470" height="150" as="geometry"/>
+                </mxCell>
+                <mxCell id="auth-overview-15" value="&lt;b&gt;4 · Phân quyền&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:11px;color:#6B7385&quot;&gt;PermissionsGuard (chung 2 mode)&lt;/font&gt;&lt;br&gt;&lt;br&gt;&lt;font style=&quot;font-size:11px;color:#6B7385&quot;&gt;→ page: Auth · Authorization (RBAC)&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#DDE1E8;fontColor=#1F2A44;fontSize=13;align=left;spacingLeft=10;verticalAlign=top;spacingTop=8;" parent="1" vertex="1">
+                    <mxGeometry x="40" y="664" width="250" height="150" as="geometry"/>
+                </mxCell>
+                <mxCell id="auth-overview-16" value="Kiểm tra mỗi request: @RequirePermissions → getUserPermissions(subjectId) → GET rbac:perms:{uid} → miss → users→roles→permissions → SET TTL 5m → cần đủ TẤT CẢ → 403 &quot;Missing permissions&quot;." style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#B25E09;fontColor=#1F2A44;fontSize=11;align=left;spacingLeft=10;spacingRight=8;verticalAlign=top;spacingTop=8;" parent="1" vertex="1">
+                    <mxGeometry x="302" y="664" width="470" height="150" as="geometry"/>
+                </mxCell>
+                <mxCell id="auth-overview-17" value="Admin đổi quyền: PUT /rbac/roles/:id/permissions (role:manage) · PUT /rbac/users/:id/roles (user:manage).&lt;br&gt;Lock row FOR UPDATE → validate → COMMIT → SAU COMMIT DEL rbac:perms:* hoặc rbac:perms:{uid}." style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#0F7B6C;fontColor=#1F2A44;fontSize=11;align=left;spacingLeft=10;spacingRight=8;verticalAlign=top;spacingTop=8;" parent="1" vertex="1">
+                    <mxGeometry x="784" y="664" width="470" height="150" as="geometry"/>
+                </mxCell>
+                <mxCell id="auth-overview-18" value="&lt;b&gt;Bất biến chung&lt;/b&gt; · Raw credential không nằm trong DB/Redis/log (chỉ sha256) · Postgres là truth, Redis là cache: đọc SET kèm TTL, ghi commit trước rồi chỉ DEL · Redis lỗi → rơi về Postgres, không 503 · Mọi ghi auth_sessions qua SESSION_STORE, mọi ghi user_roles/role_permissions qua RbacService · Biến env: khái niệm chung có tiền tố JWT_ / SESSION_, biến dùng chung không tiền tố." style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F1F3F7;strokeColor=#DDE1E8;fontColor=#1F2A44;fontSize=11;align=left;spacingLeft=10;spacingRight=10;" parent="1" vertex="1">
+                    <mxGeometry x="40" y="832" width="1214" height="70" as="geometry"/>
+                </mxCell>
+            </root>
+        </mxGraphModel>
+    </diagram>
+    <diagram id="auth-login" name="Auth · Login">
+        <mxGraphModel dx="685" dy="770" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="2600" pageHeight="1100" math="0" shadow="0">
+            <root>
+                <mxCell id="0"/>
+                <mxCell id="1" parent="0"/>
+                <mxCell id="auth-login-title" value="AUTH · ĐĂNG NHẬP — POST /api/v1/auth/login" style="text;html=1;align=left;verticalAlign=middle;fontSize=24;fontStyle=1;fontColor=#1F2A44;" parent="1" vertex="1">
+                    <mxGeometry x="40" y="20" width="1000" height="40" as="geometry"/>
+                </mxCell>
+                <mxCell id="auth-login-sub" value="Xác minh email/password chung (AuthService.authenticateCredentials, Argon2id + dummy verify). Khác nhau từ AUTH_STRATEGY.signIn. Controller/guard không có if(mode)." style="text;html=1;align=left;verticalAlign=middle;fontSize=13;fontColor=#6B7385;" parent="1" vertex="1">
+                    <mxGeometry x="40" y="58" width="1300" height="26" as="geometry"/>
+                </mxCell>
+                <mxCell id="auth-login-1" value="AUTH_MODE=jwt · stateless · jwt-auth.strategy.ts · jwt-http.transport.ts" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FBF1E6;strokeColor=#B25E09;fontColor=#B25E09;fontStyle=1;fontSize=13;align=left;spacingLeft=10;" parent="1" vertex="1">
+                    <mxGeometry x="40" y="100" width="900" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="auth-login-2" value="Client" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;dropTarget=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;rounded=1;fillColor=#FFFFFF;strokeColor=#B25E09;fontColor=#1F2A44;fontSize=12;fontStyle=1;" parent="1" vertex="1">
+                    <mxGeometry x="40" y="140" width="140" height="510" as="geometry"/>
+                </mxCell>
+                <mxCell id="auth-login-3" value="AuthController" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;dropTarget=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;rounded=1;fillColor=#FFFFFF;strokeColor=#B25E09;fontColor=#1F2A44;fontSize=12;fontStyle=1;" parent="1" vertex="1">
+                    <mxGeometry x="230" y="140" width="140" height="510" as="geometry"/>
+                </mxCell>
+                <mxCell id="auth-login-4" value="AuthService" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;dropTarget=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;rounded=1;fillColor=#FFFFFF;strokeColor=#B25E09;fontColor=#1F2A44;fontSize=12;fontStyle=1;" parent="1" vertex="1">
+                    <mxGeometry x="420" y="140" width="140" height="510" as="geometry"/>
+                </mxCell>
+                <mxCell id="auth-login-5" value="JwtAuthStrategy" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;dropTarget=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;rounded=1;fillColor=#FFFFFF;strokeColor=#B25E09;fontColor=#1F2A44;fontSize=12;fontStyle=1;" parent="1" vertex="1">
+                    <mxGeometry x="610" y="140" width="140" height="510" as="geometry"/>
+                </mxCell>
+                <mxCell id="auth-login-6" value="PostgreSQL" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;dropTarget=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;rounded=1;fillColor=#FFFFFF;strokeColor=#B25E09;fontColor=#1F2A44;fontSize=12;fontStyle=1;" parent="1" vertex="1">
+                    <mxGeometry x="800" y="140" width="140" height="510" as="geometry"/>
+                </mxCell>
+                <mxCell id="auth-login-7" value="1. {email, password}" style="html=1;verticalAlign=bottom;endArrow=block;endFill=1;edgeStyle=none;strokeColor=#1F2A44;fontColor=#1F2A44;fontSize=11;exitX=0.5;exitY=0.1078;exitDx=0;exitDy=0;entryX=0.5;entryY=0.1078;entryDx=0;entryDy=0;" parent="1" source="auth-login-2" target="auth-login-3" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="auth-login-8" value="2. authenticateCredentials()" style="html=1;verticalAlign=bottom;endArrow=block;endFill=1;edgeStyle=none;strokeColor=#1F2A44;fontColor=#1F2A44;fontSize=11;exitX=0.5;exitY=0.1941;exitDx=0;exitDy=0;entryX=0.5;entryY=0.1941;entryDx=0;entryDy=0;" parent="1" source="auth-login-3" target="auth-login-4" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="auth-login-9" value="3. user by email" style="html=1;verticalAlign=bottom;endArrow=block;endFill=1;edgeStyle=none;strokeColor=#1F2A44;fontColor=#1F2A44;fontSize=11;exitX=0.5;exitY=0.2804;exitDx=0;exitDy=0;entryX=0.5;entryY=0.2804;entryDx=0;entryDy=0;" parent="1" source="auth-login-4" target="auth-login-6" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="auth-login-10" value="4. Argon2 verifyOrDummy (chống timing)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FBF1E6;strokeColor=#B25E09;fontColor=#1F2A44;fontSize=11;align=left;spacingLeft=6;" parent="1" vertex="1">
+                    <mxGeometry x="498" y="312" width="230" height="32" as="geometry"/>
+                </mxCell>
+                <mxCell id="auth-login-11" value="5. signIn(identity, {ip, userAgent})" style="html=1;verticalAlign=bottom;endArrow=block;endFill=1;edgeStyle=none;strokeColor=#1F2A44;fontColor=#1F2A44;fontSize=11;exitX=0.5;exitY=0.4529;exitDx=0;exitDy=0;entryX=0.5;entryY=0.4529;entryDx=0;entryDy=0;" parent="1" source="auth-login-3" target="auth-login-5" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="auth-login-12" value="6. advisory lock user → re-check ACTIVE" style="html=1;verticalAlign=bottom;endArrow=block;endFill=1;edgeStyle=none;strokeColor=#1F2A44;fontColor=#1F2A44;fontSize=11;exitX=0.5;exitY=0.5392;exitDx=0;exitDy=0;entryX=0.5;entryY=0.5392;entryDx=0;entryDy=0;" parent="1" source="auth-login-5" target="auth-login-6" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="auth-login-13" value="7. INSERT refresh_sessions(tokenHash=sha256, familyId mới)" style="html=1;verticalAlign=bottom;endArrow=block;endFill=1;edgeStyle=none;strokeColor=#1F2A44;fontColor=#1F2A44;fontSize=11;exitX=0.5;exitY=0.6255;exitDx=0;exitDy=0;entryX=0.5;entryY=0.6255;entryDx=0;entryDy=0;" parent="1" source="auth-login-5" target="auth-login-6" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="auth-login-14" value="8. ký HS256 {sub, sid, jti} exp 15m" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FBF1E6;strokeColor=#B25E09;fontColor=#1F2A44;fontSize=11;align=left;spacingLeft=6;" parent="1" vertex="1">
+                    <mxGeometry x="688" y="488" width="230" height="32" as="geometry"/>
+                </mxCell>
+                <mxCell id="auth-login-15" value="9. AuthResult mode=jwt" style="html=1;verticalAlign=bottom;endArrow=open;dashed=1;edgeStyle=none;strokeColor=#1F2A44;fontColor=#1F2A44;fontSize=11;exitX=0.5;exitY=0.7980;exitDx=0;exitDy=0;entryX=0.5;entryY=0.7980;entryDx=0;entryDy=0;" parent="1" source="auth-login-5" target="auth-login-3" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="auth-login-16" value="10. {accessToken, expiresIn} + Set-Cookie meago_rt (path /api/v1/auth)" style="html=1;verticalAlign=bottom;endArrow=open;dashed=1;edgeStyle=none;strokeColor=#1F2A44;fontColor=#1F2A44;fontSize=11;exitX=0.5;exitY=0.8843;exitDx=0;exitDy=0;entryX=0.5;entryY=0.8843;entryDx=0;entryDy=0;" parent="1" source="auth-login-3" target="auth-login-2" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="auth-login-17" value="AUTH_MODE=session · stateful · session/session-auth.strategy.ts · session-http.transport.ts" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E6F3F0;strokeColor=#0F7B6C;fontColor=#0F7B6C;fontStyle=1;fontSize=13;align=left;spacingLeft=10;" parent="1" vertex="1">
+                    <mxGeometry x="1070" y="100" width="1090" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="auth-login-18" value="Client" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;dropTarget=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;rounded=1;fillColor=#FFFFFF;strokeColor=#0F7B6C;fontColor=#1F2A44;fontSize=12;fontStyle=1;" parent="1" vertex="1">
+                    <mxGeometry x="1070" y="140" width="140" height="510" as="geometry"/>
+                </mxCell>
+                <mxCell id="auth-login-19" value="AuthController" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;dropTarget=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;rounded=1;fillColor=#FFFFFF;strokeColor=#0F7B6C;fontColor=#1F2A44;fontSize=12;fontStyle=1;" parent="1" vertex="1">
+                    <mxGeometry x="1260" y="140" width="140" height="510" as="geometry"/>
+                </mxCell>
+                <mxCell id="auth-login-20" value="AuthService" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;dropTarget=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;rounded=1;fillColor=#FFFFFF;strokeColor=#0F7B6C;fontColor=#1F2A44;fontSize=12;fontStyle=1;" parent="1" vertex="1">
+                    <mxGeometry x="1450" y="140" width="140" height="510" as="geometry"/>
+                </mxCell>
+                <mxCell id="auth-login-21" value="SessionAuthStrategy" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;dropTarget=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;rounded=1;fillColor=#FFFFFF;strokeColor=#0F7B6C;fontColor=#1F2A44;fontSize=12;fontStyle=1;" parent="1" vertex="1">
+                    <mxGeometry x="1640" y="140" width="140" height="510" as="geometry"/>
+                </mxCell>
+                <mxCell id="auth-login-22" value="PostgreSQL" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;dropTarget=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;rounded=1;fillColor=#FFFFFF;strokeColor=#0F7B6C;fontColor=#1F2A44;fontSize=12;fontStyle=1;" parent="1" vertex="1">
+                    <mxGeometry x="1830" y="140" width="140" height="510" as="geometry"/>
+                </mxCell>
+                <mxCell id="auth-login-23" value="Redis" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;dropTarget=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;rounded=1;fillColor=#FFFFFF;strokeColor=#0F7B6C;fontColor=#1F2A44;fontSize=12;fontStyle=1;" parent="1" vertex="1">
+                    <mxGeometry x="2020" y="140" width="140" height="510" as="geometry"/>
+                </mxCell>
+                <mxCell id="auth-login-24" value="1. {email, password}" style="html=1;verticalAlign=bottom;endArrow=block;endFill=1;edgeStyle=none;strokeColor=#1F2A44;fontColor=#1F2A44;fontSize=11;exitX=0.5;exitY=0.1078;exitDx=0;exitDy=0;entryX=0.5;entryY=0.1078;entryDx=0;entryDy=0;" parent="1" source="auth-login-18" target="auth-login-19" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="auth-login-25" value="2. authenticateCredentials()" style="html=1;verticalAlign=bottom;endArrow=block;endFill=1;edgeStyle=none;strokeColor=#1F2A44;fontColor=#1F2A44;fontSize=11;exitX=0.5;exitY=0.1941;exitDx=0;exitDy=0;entryX=0.5;entryY=0.1941;entryDx=0;entryDy=0;" parent="1" source="auth-login-19" target="auth-login-20" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="auth-login-26" value="3. user by email" style="html=1;verticalAlign=bottom;endArrow=block;endFill=1;edgeStyle=none;strokeColor=#1F2A44;fontColor=#1F2A44;fontSize=11;exitX=0.5;exitY=0.2804;exitDx=0;exitDy=0;entryX=0.5;entryY=0.2804;entryDx=0;entryDy=0;" parent="1" source="auth-login-20" target="auth-login-22" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="auth-login-27" value="4. Argon2 verifyOrDummy (chống timing)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E6F3F0;strokeColor=#0F7B6C;fontColor=#1F2A44;fontSize=11;align=left;spacingLeft=6;" parent="1" vertex="1">
+                    <mxGeometry x="1528" y="312" width="230" height="32" as="geometry"/>
+                </mxCell>
+                <mxCell id="auth-login-28" value="5. signIn(identity, {ip, userAgent})" style="html=1;verticalAlign=bottom;endArrow=block;endFill=1;edgeStyle=none;strokeColor=#1F2A44;fontColor=#1F2A44;fontSize=11;exitX=0.5;exitY=0.4529;exitDx=0;exitDy=0;entryX=0.5;entryY=0.4529;entryDx=0;entryDy=0;" parent="1" source="auth-login-19" target="auth-login-21" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="auth-login-29" value="6. sid = random 32B · id = sha256(sid)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E6F3F0;strokeColor=#0F7B6C;fontColor=#1F2A44;fontSize=11;align=left;spacingLeft=6;" parent="1" vertex="1">
+                    <mxGeometry x="1718" y="400" width="230" height="32" as="geometry"/>
+                </mxCell>
+                <mxCell id="auth-login-30" value="7. INSERT auth_sessions(id, idle=now+30m, absolute=now+14d, data{email})" style="html=1;verticalAlign=bottom;endArrow=block;endFill=1;edgeStyle=none;strokeColor=#1F2A44;fontColor=#1F2A44;fontSize=11;exitX=0.5;exitY=0.6255;exitDx=0;exitDy=0;entryX=0.5;entryY=0.6255;entryDx=0;entryDy=0;" parent="1" source="auth-login-21" target="auth-login-22" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="auth-login-31" value="8. SADD auth:user:{uid}:sessions — KHÔNG SET record" style="html=1;verticalAlign=bottom;endArrow=block;endFill=1;edgeStyle=none;strokeColor=#1F2A44;fontColor=#1F2A44;fontSize=11;exitX=0.5;exitY=0.7118;exitDx=0;exitDy=0;entryX=0.5;entryY=0.7118;entryDx=0;entryDy=0;" parent="1" source="auth-login-21" target="auth-login-23" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="auth-login-32" value="9. AuthResult mode=session (sid thô)" style="html=1;verticalAlign=bottom;endArrow=open;dashed=1;edgeStyle=none;strokeColor=#1F2A44;fontColor=#1F2A44;fontSize=11;exitX=0.5;exitY=0.7980;exitDx=0;exitDy=0;entryX=0.5;entryY=0.7980;entryDx=0;entryDy=0;" parent="1" source="auth-login-21" target="auth-login-19" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="auth-login-33" value="10. {expiresAt} + Set-Cookie meago_sid (path /, HttpOnly)" style="html=1;verticalAlign=bottom;endArrow=open;dashed=1;edgeStyle=none;strokeColor=#1F2A44;fontColor=#1F2A44;fontSize=11;exitX=0.5;exitY=0.8843;exitDx=0;exitDy=0;entryX=0.5;entryY=0.8843;entryDx=0;entryDy=0;" parent="1" source="auth-login-19" target="auth-login-18" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+            </root>
+        </mxGraphModel>
+    </diagram>
+    <diagram id="auth-verify" name="Auth · Request verification">
+        <mxGraphModel dx="685" dy="770" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="2600" pageHeight="1100" math="0" shadow="0">
+            <root>
+                <mxCell id="0"/>
+                <mxCell id="1" parent="0"/>
+                <mxCell id="auth-verify-title" value="AUTH · XÁC MINH MỖI REQUEST — AuthenticationGuard" style="text;html=1;align=left;verticalAlign=middle;fontSize=24;fontStyle=1;fontColor=#1F2A44;" parent="1" vertex="1">
+                    <mxGeometry x="40" y="20" width="1000" height="40" as="geometry"/>
+                </mxCell>
+                <mxCell id="auth-verify-sub" value="Guard hỏi AUTH_HTTP_TRANSPORT credential ở đâu, đưa cho AUTHENTICATION_PORT của mode đó. Kết quả luôn là AuthPrincipal{subjectId, sessionId}; PermissionsGuard phía sau không biết mode." style="text;html=1;align=left;verticalAlign=middle;fontSize=13;fontColor=#6B7385;" parent="1" vertex="1">
+                    <mxGeometry x="40" y="58" width="1300" height="26" as="geometry"/>
+                </mxCell>
+                <mxCell id="auth-verify-1" value="AUTH_MODE=jwt · 0 I/O — verify chữ ký tại chỗ · jwt-authentication.adapter.ts" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FBF1E6;strokeColor=#B25E09;fontColor=#B25E09;fontStyle=1;fontSize=13;align=left;spacingLeft=10;" parent="1" vertex="1">
+                    <mxGeometry x="40" y="100" width="1090" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="auth-verify-2" value="Client" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;dropTarget=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;rounded=1;fillColor=#FFFFFF;strokeColor=#B25E09;fontColor=#1F2A44;fontSize=12;fontStyle=1;" parent="1" vertex="1">
+                    <mxGeometry x="40" y="140" width="140" height="510" as="geometry"/>
+                </mxCell>
+                <mxCell id="auth-verify-3" value="AuthenticationGuard" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;dropTarget=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;rounded=1;fillColor=#FFFFFF;strokeColor=#B25E09;fontColor=#1F2A44;fontSize=12;fontStyle=1;" parent="1" vertex="1">
+                    <mxGeometry x="230" y="140" width="140" height="510" as="geometry"/>
+                </mxCell>
+                <mxCell id="auth-verify-4" value="JwtHttpTransport" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;dropTarget=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;rounded=1;fillColor=#FFFFFF;strokeColor=#B25E09;fontColor=#1F2A44;fontSize=12;fontStyle=1;" parent="1" vertex="1">
+                    <mxGeometry x="420" y="140" width="140" height="510" as="geometry"/>
+                </mxCell>
+                <mxCell id="auth-verify-5" value="JwtAuthenticationAdapter" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;dropTarget=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;rounded=1;fillColor=#FFFFFF;strokeColor=#B25E09;fontColor=#1F2A44;fontSize=12;fontStyle=1;" parent="1" vertex="1">
+                    <mxGeometry x="610" y="140" width="140" height="510" as="geometry"/>
+                </mxCell>
+                <mxCell id="auth-verify-6" value="PermissionsGuard" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;dropTarget=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;rounded=1;fillColor=#FFFFFF;strokeColor=#B25E09;fontColor=#1F2A44;fontSize=12;fontStyle=1;" parent="1" vertex="1">
+                    <mxGeometry x="800" y="140" width="140" height="510" as="geometry"/>
+                </mxCell>
+                <mxCell id="auth-verify-7" value="Redis / DB" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;dropTarget=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;rounded=1;fillColor=#FFFFFF;strokeColor=#B25E09;fontColor=#1F2A44;fontSize=12;fontStyle=1;" parent="1" vertex="1">
+                    <mxGeometry x="990" y="140" width="140" height="510" as="geometry"/>
+                </mxCell>
+                <mxCell id="auth-verify-8" value="1. Authorization: Bearer &lt;JWT&gt;" style="html=1;verticalAlign=bottom;endArrow=block;endFill=1;edgeStyle=none;strokeColor=#1F2A44;fontColor=#1F2A44;fontSize=11;exitX=0.5;exitY=0.1078;exitDx=0;exitDy=0;entryX=0.5;entryY=0.1078;entryDx=0;entryDy=0;" parent="1" source="auth-verify-2" target="auth-verify-3" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="auth-verify-9" value="2. readRequestCredential(req)" style="html=1;verticalAlign=bottom;endArrow=block;endFill=1;edgeStyle=none;strokeColor=#1F2A44;fontColor=#1F2A44;fontSize=11;exitX=0.5;exitY=0.1941;exitDx=0;exitDy=0;entryX=0.5;entryY=0.1941;entryDx=0;entryDy=0;" parent="1" source="auth-verify-3" target="auth-verify-4" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="auth-verify-10" value="3. {kind: bearer, token}" style="html=1;verticalAlign=bottom;endArrow=open;dashed=1;edgeStyle=none;strokeColor=#1F2A44;fontColor=#1F2A44;fontSize=11;exitX=0.5;exitY=0.2804;exitDx=0;exitDy=0;entryX=0.5;entryY=0.2804;entryDx=0;entryDy=0;" parent="1" source="auth-verify-4" target="auth-verify-3" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="auth-verify-11" value="4. authenticate()" style="html=1;verticalAlign=bottom;endArrow=block;endFill=1;edgeStyle=none;strokeColor=#1F2A44;fontColor=#1F2A44;fontSize=11;exitX=0.5;exitY=0.3667;exitDx=0;exitDy=0;entryX=0.5;entryY=0.3667;entryDx=0;entryDy=0;" parent="1" source="auth-verify-3" target="auth-verify-5" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="auth-verify-12" value="5. verify HS256 · iss · aud · exp · sub/sid/jti" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FBF1E6;strokeColor=#B25E09;fontColor=#1F2A44;fontSize=11;align=left;spacingLeft=6;" parent="1" vertex="1">
+                    <mxGeometry x="688" y="356" width="230" height="32" as="geometry"/>
+                </mxCell>
+                <mxCell id="auth-verify-13" value="6. AuthPrincipal" style="html=1;verticalAlign=bottom;endArrow=open;dashed=1;edgeStyle=none;strokeColor=#1F2A44;fontColor=#1F2A44;fontSize=11;exitX=0.5;exitY=0.5392;exitDx=0;exitDy=0;entryX=0.5;entryY=0.5392;entryDx=0;entryDy=0;" parent="1" source="auth-verify-5" target="auth-verify-3" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="auth-verify-14" value="7. request.user" style="html=1;verticalAlign=bottom;endArrow=block;endFill=1;edgeStyle=none;strokeColor=#1F2A44;fontColor=#1F2A44;fontSize=11;exitX=0.5;exitY=0.6255;exitDx=0;exitDy=0;entryX=0.5;entryY=0.6255;entryDx=0;entryDy=0;" parent="1" source="auth-verify-3" target="auth-verify-6" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="auth-verify-15" value="opt @RequirePermissions" style="shape=umlFrame;whiteSpace=wrap;html=1;width=150;height=22;fontSize=11;fontStyle=1;strokeColor=#6B7385;fontColor=#6B7385;fillColor=none;dashed=1;" parent="1" vertex="1">
+                    <mxGeometry x="790" y="491" width="350" height="62" as="geometry"/>
+                </mxCell>
+                <mxCell id="auth-verify-16" value="8. GET rbac:perms:{uid} (miss → DB, TTL 5m)" style="html=1;verticalAlign=bottom;endArrow=block;endFill=1;edgeStyle=none;strokeColor=#1F2A44;fontColor=#1F2A44;fontSize=11;exitX=0.5;exitY=0.7118;exitDx=0;exitDy=0;entryX=0.5;entryY=0.7118;entryDx=0;entryDy=0;" parent="1" source="auth-verify-6" target="auth-verify-7" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="auth-verify-17" value="9. 200 / 401 / 403" style="html=1;verticalAlign=bottom;endArrow=open;dashed=1;edgeStyle=none;strokeColor=#1F2A44;fontColor=#1F2A44;fontSize=11;exitX=0.5;exitY=0.7980;exitDx=0;exitDy=0;entryX=0.5;entryY=0.7980;entryDx=0;entryDy=0;" parent="1" source="auth-verify-6" target="auth-verify-2" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="auth-verify-18" value="AUTH_MODE=session · 1 GET Redis, miss/lỗi → Postgres · session-authentication.adapter.ts · csrf.guard.ts" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E6F3F0;strokeColor=#0F7B6C;fontColor=#0F7B6C;fontStyle=1;fontSize=13;align=left;spacingLeft=10;" parent="1" vertex="1">
+                    <mxGeometry x="1260" y="100" width="1280" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="auth-verify-19" value="Client" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;dropTarget=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;rounded=1;fillColor=#FFFFFF;strokeColor=#0F7B6C;fontColor=#1F2A44;fontSize=12;fontStyle=1;" parent="1" vertex="1">
+                    <mxGeometry x="1260" y="140" width="140" height="730" as="geometry"/>
+                </mxCell>
+                <mxCell id="auth-verify-20" value="CsrfGuard" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;dropTarget=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;rounded=1;fillColor=#FFFFFF;strokeColor=#0F7B6C;fontColor=#1F2A44;fontSize=12;fontStyle=1;" parent="1" vertex="1">
+                    <mxGeometry x="1450" y="140" width="140" height="730" as="geometry"/>
+                </mxCell>
+                <mxCell id="auth-verify-21" value="AuthenticationGuard" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;dropTarget=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;rounded=1;fillColor=#FFFFFF;strokeColor=#0F7B6C;fontColor=#1F2A44;fontSize=12;fontStyle=1;" parent="1" vertex="1">
+                    <mxGeometry x="1640" y="140" width="140" height="730" as="geometry"/>
+                </mxCell>
+                <mxCell id="auth-verify-22" value="SessionAuthenticationAdapter" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;dropTarget=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;rounded=1;fillColor=#FFFFFF;strokeColor=#0F7B6C;fontColor=#1F2A44;fontSize=12;fontStyle=1;" parent="1" vertex="1">
+                    <mxGeometry x="1830" y="140" width="140" height="730" as="geometry"/>
+                </mxCell>
+                <mxCell id="auth-verify-23" value="Redis" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;dropTarget=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;rounded=1;fillColor=#FFFFFF;strokeColor=#0F7B6C;fontColor=#1F2A44;fontSize=12;fontStyle=1;" parent="1" vertex="1">
+                    <mxGeometry x="2020" y="140" width="140" height="730" as="geometry"/>
+                </mxCell>
+                <mxCell id="auth-verify-24" value="PostgreSQL" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;dropTarget=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;rounded=1;fillColor=#FFFFFF;strokeColor=#0F7B6C;fontColor=#1F2A44;fontSize=12;fontStyle=1;" parent="1" vertex="1">
+                    <mxGeometry x="2210" y="140" width="140" height="730" as="geometry"/>
+                </mxCell>
+                <mxCell id="auth-verify-25" value="PermissionsGuard" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;dropTarget=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;rounded=1;fillColor=#FFFFFF;strokeColor=#0F7B6C;fontColor=#1F2A44;fontSize=12;fontStyle=1;" parent="1" vertex="1">
+                    <mxGeometry x="2400" y="140" width="140" height="730" as="geometry"/>
+                </mxCell>
+                <mxCell id="auth-verify-26" value="1. Cookie meago_sid (+ X-Requested-With nếu POST/PUT/DELETE)" style="html=1;verticalAlign=bottom;endArrow=block;endFill=1;edgeStyle=none;strokeColor=#1F2A44;fontColor=#1F2A44;fontSize=11;exitX=0.5;exitY=0.0753;exitDx=0;exitDy=0;entryX=0.5;entryY=0.0753;entryDx=0;entryDy=0;" parent="1" source="auth-verify-19" target="auth-verify-20" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="auth-verify-27" value="2. pass (403 AUTH_CSRF_HEADER_REQUIRED nếu thiếu)" style="html=1;verticalAlign=bottom;endArrow=block;endFill=1;edgeStyle=none;strokeColor=#1F2A44;fontColor=#1F2A44;fontSize=11;exitX=0.5;exitY=0.1356;exitDx=0;exitDy=0;entryX=0.5;entryY=0.1356;entryDx=0;entryDy=0;" parent="1" source="auth-verify-20" target="auth-verify-21" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="auth-verify-28" value="3. {kind: session, sessionId}" style="html=1;verticalAlign=bottom;endArrow=block;endFill=1;edgeStyle=none;strokeColor=#1F2A44;fontColor=#1F2A44;fontSize=11;exitX=0.5;exitY=0.1959;exitDx=0;exitDy=0;entryX=0.5;entryY=0.1959;entryDx=0;entryDy=0;" parent="1" source="auth-verify-21" target="auth-verify-22" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="auth-verify-29" value="4. GET auth:sess:{sha256(sid)}" style="html=1;verticalAlign=bottom;endArrow=block;endFill=1;edgeStyle=none;strokeColor=#1F2A44;fontColor=#1F2A44;fontSize=11;exitX=0.5;exitY=0.2562;exitDx=0;exitDy=0;entryX=0.5;entryY=0.2562;entryDx=0;entryDy=0;" parent="1" source="auth-verify-22" target="auth-verify-23" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="auth-verify-30" value="alt miss / Redis lỗi" style="shape=umlFrame;whiteSpace=wrap;html=1;width=150;height=22;fontSize=11;fontStyle=1;strokeColor=#6B7385;fontColor=#6B7385;fillColor=none;dashed=1;" parent="1" vertex="1">
+                    <mxGeometry x="1820" y="359" width="540" height="106" as="geometry"/>
+                </mxCell>
+                <mxCell id="auth-verify-31" value="5. SELECT auth_sessions WHERE id" style="html=1;verticalAlign=bottom;endArrow=block;endFill=1;edgeStyle=none;strokeColor=#1F2A44;fontColor=#1F2A44;fontSize=11;exitX=0.5;exitY=0.3164;exitDx=0;exitDy=0;entryX=0.5;entryY=0.3164;entryDx=0;entryDy=0;" parent="1" source="auth-verify-22" target="auth-verify-24" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="auth-verify-32" value="6. SET record PX=min(idle còn lại, 300s)" style="html=1;verticalAlign=bottom;endArrow=block;endFill=1;edgeStyle=none;strokeColor=#1F2A44;fontColor=#1F2A44;fontSize=11;exitX=0.5;exitY=0.3767;exitDx=0;exitDy=0;entryX=0.5;entryY=0.3767;entryDx=0;entryDy=0;" parent="1" source="auth-verify-22" target="auth-verify-23" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="auth-verify-33" value="7. revokedAt? idle? absolute?" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E6F3F0;strokeColor=#0F7B6C;fontColor=#1F2A44;fontSize=11;align=left;spacingLeft=6;" parent="1" vertex="1">
+                    <mxGeometry x="1908" y="444" width="230" height="32" as="geometry"/>
+                </mxCell>
+                <mxCell id="auth-verify-34" value="opt lastSeenAt cũ hơn 60s" style="shape=umlFrame;whiteSpace=wrap;html=1;width=150;height=22;fontSize=11;fontStyle=1;strokeColor=#6B7385;fontColor=#6B7385;fillColor=none;dashed=1;" parent="1" vertex="1">
+                    <mxGeometry x="1820" y="491" width="540" height="106" as="geometry"/>
+                </mxCell>
+                <mxCell id="auth-verify-35" value="8. UPDATE lastSeenAt, expiresAt (fire-and-forget)" style="html=1;verticalAlign=bottom;endArrow=open;edgeStyle=none;strokeColor=#1F2A44;fontColor=#1F2A44;fontSize=11;exitX=0.5;exitY=0.4973;exitDx=0;exitDy=0;entryX=0.5;entryY=0.4973;entryDx=0;entryDy=0;" parent="1" source="auth-verify-22" target="auth-verify-24" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="auth-verify-36" value="9. DEL auth:sess:{id}" style="html=1;verticalAlign=bottom;endArrow=open;edgeStyle=none;strokeColor=#1F2A44;fontColor=#1F2A44;fontSize=11;exitX=0.5;exitY=0.5575;exitDx=0;exitDy=0;entryX=0.5;entryY=0.5575;entryDx=0;entryDy=0;" parent="1" source="auth-verify-22" target="auth-verify-23" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="auth-verify-37" value="10. AuthPrincipal" style="html=1;verticalAlign=bottom;endArrow=open;dashed=1;edgeStyle=none;strokeColor=#1F2A44;fontColor=#1F2A44;fontSize=11;exitX=0.5;exitY=0.6178;exitDx=0;exitDy=0;entryX=0.5;entryY=0.6178;entryDx=0;entryDy=0;" parent="1" source="auth-verify-22" target="auth-verify-21" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="auth-verify-38" value="11. request.user" style="html=1;verticalAlign=bottom;endArrow=block;endFill=1;edgeStyle=none;strokeColor=#1F2A44;fontColor=#1F2A44;fontSize=11;exitX=0.5;exitY=0.6781;exitDx=0;exitDy=0;entryX=0.5;entryY=0.6781;entryDx=0;entryDy=0;" parent="1" source="auth-verify-21" target="auth-verify-25" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="auth-verify-39" value="12. GET rbac:perms:{uid} (nếu @RequirePermissions)" style="html=1;verticalAlign=bottom;endArrow=block;endFill=1;edgeStyle=none;strokeColor=#1F2A44;fontColor=#1F2A44;fontSize=11;exitX=0.5;exitY=0.7384;exitDx=0;exitDy=0;entryX=0.5;entryY=0.7384;entryDx=0;entryDy=0;" parent="1" source="auth-verify-25" target="auth-verify-23" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="auth-verify-40" value="13. 200 / 401 / 403" style="html=1;verticalAlign=bottom;endArrow=open;dashed=1;edgeStyle=none;strokeColor=#1F2A44;fontColor=#1F2A44;fontSize=11;exitX=0.5;exitY=0.7986;exitDx=0;exitDy=0;entryX=0.5;entryY=0.7986;entryDx=0;entryDy=0;" parent="1" source="auth-verify-25" target="auth-verify-19" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+            </root>
+        </mxGraphModel>
+    </diagram>
+    <diagram id="auth-rbac" name="Auth · Authorization (RBAC)">
+        <mxGraphModel dx="685" dy="770" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="2600" pageHeight="1100" math="0" shadow="0">
+            <root>
+                <mxCell id="0"/>
+                <mxCell id="1" parent="0"/>
+                <mxCell id="auth-rbac-title" value="AUTH · PHÂN QUYỀN — PermissionsGuard + cache rbac:perms + invalidate sau commit" style="text;html=1;align=left;verticalAlign=middle;fontSize=24;fontStyle=1;fontColor=#1F2A44;" parent="1" vertex="1">
+                    <mxGeometry x="40" y="20" width="1000" height="40" as="geometry"/>
+                </mxCell>
+                <mxCell id="auth-rbac-sub" value="Chạy SAU AuthenticationGuard, giống nhau ở cả hai AUTH_MODE: chỉ cần AuthPrincipal.subjectId. Permission là data &quot;resource:action&quot;; code không hardcode role. Redis lỗi → fail-open về DB." style="text;html=1;align=left;verticalAlign=middle;fontSize=13;fontColor=#6B7385;" parent="1" vertex="1">
+                    <mxGeometry x="40" y="58" width="1300" height="26" as="geometry"/>
+                </mxCell>
+                <mxCell id="auth-rbac-1" value="Kiểm tra quyền mỗi request · permissions.guard.ts · rbac.service.ts" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ECECF7;strokeColor=#4A4E9E;fontColor=#4A4E9E;fontStyle=1;fontSize=13;align=left;spacingLeft=10;" parent="1" vertex="1">
+                    <mxGeometry x="40" y="100" width="1090" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="auth-rbac-2" value="Client" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;dropTarget=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;rounded=1;fillColor=#FFFFFF;strokeColor=#4A4E9E;fontColor=#1F2A44;fontSize=12;fontStyle=1;" parent="1" vertex="1">
+                    <mxGeometry x="40" y="140" width="140" height="554" as="geometry"/>
+                </mxCell>
+                <mxCell id="auth-rbac-3" value="PermissionsGuard" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;dropTarget=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;rounded=1;fillColor=#FFFFFF;strokeColor=#4A4E9E;fontColor=#1F2A44;fontSize=12;fontStyle=1;" parent="1" vertex="1">
+                    <mxGeometry x="230" y="140" width="140" height="554" as="geometry"/>
+                </mxCell>
+                <mxCell id="auth-rbac-4" value="Reflector" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;dropTarget=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;rounded=1;fillColor=#FFFFFF;strokeColor=#4A4E9E;fontColor=#1F2A44;fontSize=12;fontStyle=1;" parent="1" vertex="1">
+                    <mxGeometry x="420" y="140" width="140" height="554" as="geometry"/>
+                </mxCell>
+                <mxCell id="auth-rbac-5" value="RbacService" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;dropTarget=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;rounded=1;fillColor=#FFFFFF;strokeColor=#4A4E9E;fontColor=#1F2A44;fontSize=12;fontStyle=1;" parent="1" vertex="1">
+                    <mxGeometry x="610" y="140" width="140" height="554" as="geometry"/>
+                </mxCell>
+                <mxCell id="auth-rbac-6" value="Redis" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;dropTarget=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;rounded=1;fillColor=#FFFFFF;strokeColor=#4A4E9E;fontColor=#1F2A44;fontSize=12;fontStyle=1;" parent="1" vertex="1">
+                    <mxGeometry x="800" y="140" width="140" height="554" as="geometry"/>
+                </mxCell>
+                <mxCell id="auth-rbac-7" value="PostgreSQL" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;dropTarget=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;rounded=1;fillColor=#FFFFFF;strokeColor=#4A4E9E;fontColor=#1F2A44;fontSize=12;fontStyle=1;" parent="1" vertex="1">
+                    <mxGeometry x="990" y="140" width="140" height="554" as="geometry"/>
+                </mxCell>
+                <mxCell id="auth-rbac-8" value="1. request (đã có request.user từ AuthenticationGuard)" style="html=1;verticalAlign=bottom;endArrow=block;endFill=1;edgeStyle=none;strokeColor=#1F2A44;fontColor=#1F2A44;fontSize=11;exitX=0.5;exitY=0.0993;exitDx=0;exitDy=0;entryX=0.5;entryY=0.0993;entryDx=0;entryDy=0;" parent="1" source="auth-rbac-2" target="auth-rbac-3" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="auth-rbac-9" value="2. getAllAndOverride(@RequirePermissions) handler → class" style="html=1;verticalAlign=bottom;endArrow=block;endFill=1;edgeStyle=none;strokeColor=#1F2A44;fontColor=#1F2A44;fontSize=11;exitX=0.5;exitY=0.1787;exitDx=0;exitDy=0;entryX=0.5;entryY=0.1787;entryDx=0;entryDy=0;" parent="1" source="auth-rbac-3" target="auth-rbac-4" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="auth-rbac-10" value="3. không có decorator → pass ngay (chỉ cần đã xác thực)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ECECF7;strokeColor=#4A4E9E;fontColor=#1F2A44;fontSize=11;align=left;spacingLeft=6;" parent="1" vertex="1">
+                    <mxGeometry x="308" y="268" width="230" height="32" as="geometry"/>
+                </mxCell>
+                <mxCell id="auth-rbac-11" value="4. getUserPermissions(subjectId)" style="html=1;verticalAlign=bottom;endArrow=block;endFill=1;edgeStyle=none;strokeColor=#1F2A44;fontColor=#1F2A44;fontSize=11;exitX=0.5;exitY=0.3375;exitDx=0;exitDy=0;entryX=0.5;entryY=0.3375;entryDx=0;entryDy=0;" parent="1" source="auth-rbac-3" target="auth-rbac-5" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="auth-rbac-12" value="5. GET rbac:perms:{uid}" style="html=1;verticalAlign=bottom;endArrow=block;endFill=1;edgeStyle=none;strokeColor=#1F2A44;fontColor=#1F2A44;fontSize=11;exitX=0.5;exitY=0.4170;exitDx=0;exitDy=0;entryX=0.5;entryY=0.4170;entryDx=0;entryDy=0;" parent="1" source="auth-rbac-5" target="auth-rbac-6" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="auth-rbac-13" value="alt miss / Redis lỗi" style="shape=umlFrame;whiteSpace=wrap;html=1;width=150;height=22;fontSize=11;fontStyle=1;strokeColor=#6B7385;fontColor=#6B7385;fillColor=none;dashed=1;" parent="1" vertex="1">
+                    <mxGeometry x="600" y="403" width="540" height="106" as="geometry"/>
+                </mxCell>
+                <mxCell id="auth-rbac-14" value="6. users → user_roles → roles → role_permissions → permissions" style="html=1;verticalAlign=bottom;endArrow=block;endFill=1;edgeStyle=none;strokeColor=#1F2A44;fontColor=#1F2A44;fontSize=11;exitX=0.5;exitY=0.4964;exitDx=0;exitDy=0;entryX=0.5;entryY=0.4964;entryDx=0;entryDy=0;" parent="1" source="auth-rbac-5" target="auth-rbac-7" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="auth-rbac-15" value="7. SET rbac:perms:{uid} PX=PERMISSION_CACHE_TTL_MS (5m)" style="html=1;verticalAlign=bottom;endArrow=block;endFill=1;edgeStyle=none;strokeColor=#1F2A44;fontColor=#1F2A44;fontSize=11;exitX=0.5;exitY=0.5758;exitDx=0;exitDy=0;entryX=0.5;entryY=0.5758;entryDx=0;entryDy=0;" parent="1" source="auth-rbac-5" target="auth-rbac-6" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="auth-rbac-16" value="8. Set&lt;permission&gt;" style="html=1;verticalAlign=bottom;endArrow=open;dashed=1;edgeStyle=none;strokeColor=#1F2A44;fontColor=#1F2A44;fontSize=11;exitX=0.5;exitY=0.6552;exitDx=0;exitDy=0;entryX=0.5;entryY=0.6552;entryDx=0;entryDy=0;" parent="1" source="auth-rbac-5" target="auth-rbac-3" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="auth-rbac-17" value="9. missing = required − granted (cần đủ TẤT CẢ)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ECECF7;strokeColor=#4A4E9E;fontColor=#1F2A44;fontSize=11;align=left;spacingLeft=6;" parent="1" vertex="1">
+                    <mxGeometry x="308" y="532" width="230" height="32" as="geometry"/>
+                </mxCell>
+                <mxCell id="auth-rbac-18" value="10. pass → handler · hoặc 403 &quot;Missing permissions: …&quot;" style="html=1;verticalAlign=bottom;endArrow=open;dashed=1;edgeStyle=none;strokeColor=#1F2A44;fontColor=#1F2A44;fontSize=11;exitX=0.5;exitY=0.8141;exitDx=0;exitDy=0;entryX=0.5;entryY=0.8141;entryDx=0;entryDy=0;" parent="1" source="auth-rbac-3" target="auth-rbac-2" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="auth-rbac-19" value="Admin đổi quyền → invalidate · rbac.controller.ts · PUT /rbac/…" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F7E9F1;strokeColor=#8A3A6B;fontColor=#8A3A6B;fontStyle=1;fontSize=13;align=left;spacingLeft=10;" parent="1" vertex="1">
+                    <mxGeometry x="1260" y="100" width="900" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="auth-rbac-20" value="Admin" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;dropTarget=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;rounded=1;fillColor=#FFFFFF;strokeColor=#8A3A6B;fontColor=#1F2A44;fontSize=12;fontStyle=1;" parent="1" vertex="1">
+                    <mxGeometry x="1260" y="140" width="140" height="642" as="geometry"/>
+                </mxCell>
+                <mxCell id="auth-rbac-21" value="RbacController" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;dropTarget=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;rounded=1;fillColor=#FFFFFF;strokeColor=#8A3A6B;fontColor=#1F2A44;fontSize=12;fontStyle=1;" parent="1" vertex="1">
+                    <mxGeometry x="1450" y="140" width="140" height="642" as="geometry"/>
+                </mxCell>
+                <mxCell id="auth-rbac-22" value="RbacService" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;dropTarget=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;rounded=1;fillColor=#FFFFFF;strokeColor=#8A3A6B;fontColor=#1F2A44;fontSize=12;fontStyle=1;" parent="1" vertex="1">
+                    <mxGeometry x="1640" y="140" width="140" height="642" as="geometry"/>
+                </mxCell>
+                <mxCell id="auth-rbac-23" value="PostgreSQL" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;dropTarget=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;rounded=1;fillColor=#FFFFFF;strokeColor=#8A3A6B;fontColor=#1F2A44;fontSize=12;fontStyle=1;" parent="1" vertex="1">
+                    <mxGeometry x="1830" y="140" width="140" height="642" as="geometry"/>
+                </mxCell>
+                <mxCell id="auth-rbac-24" value="Redis" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;dropTarget=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;rounded=1;fillColor=#FFFFFF;strokeColor=#8A3A6B;fontColor=#1F2A44;fontSize=12;fontStyle=1;" parent="1" vertex="1">
+                    <mxGeometry x="2020" y="140" width="140" height="642" as="geometry"/>
+                </mxCell>
+                <mxCell id="auth-rbac-25" value="1. PUT /rbac/roles/:id/permissions {permissions[]}  (role:manage)" style="html=1;verticalAlign=bottom;endArrow=block;endFill=1;edgeStyle=none;strokeColor=#1F2A44;fontColor=#1F2A44;fontSize=11;exitX=0.5;exitY=0.0857;exitDx=0;exitDy=0;entryX=0.5;entryY=0.0857;entryDx=0;entryDy=0;" parent="1" source="auth-rbac-20" target="auth-rbac-21" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="auth-rbac-26" value="2. setRolePermissions(roleId, names)" style="html=1;verticalAlign=bottom;endArrow=block;endFill=1;edgeStyle=none;strokeColor=#1F2A44;fontColor=#1F2A44;fontSize=11;exitX=0.5;exitY=0.1542;exitDx=0;exitDy=0;entryX=0.5;entryY=0.1542;entryDx=0;entryDy=0;" parent="1" source="auth-rbac-21" target="auth-rbac-22" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="auth-rbac-27" value="3. BEGIN · SELECT role FOR UPDATE" style="html=1;verticalAlign=bottom;endArrow=block;endFill=1;edgeStyle=none;strokeColor=#1F2A44;fontColor=#1F2A44;fontSize=11;exitX=0.5;exitY=0.2227;exitDx=0;exitDy=0;entryX=0.5;entryY=0.2227;entryDx=0;entryDy=0;" parent="1" source="auth-rbac-22" target="auth-rbac-23" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="auth-rbac-28" value="4. SELECT permissions WHERE name IN (…) → thiếu → 400 RBAC_UNKNOWN_PERMISSION" style="html=1;verticalAlign=bottom;endArrow=block;endFill=1;edgeStyle=none;strokeColor=#1F2A44;fontColor=#1F2A44;fontSize=11;exitX=0.5;exitY=0.2913;exitDx=0;exitDy=0;entryX=0.5;entryY=0.2913;entryDx=0;entryDy=0;" parent="1" source="auth-rbac-22" target="auth-rbac-23" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="auth-rbac-29" value="5. save role_permissions · COMMIT" style="html=1;verticalAlign=bottom;endArrow=block;endFill=1;edgeStyle=none;strokeColor=#1F2A44;fontColor=#1F2A44;fontSize=11;exitX=0.5;exitY=0.3598;exitDx=0;exitDy=0;entryX=0.5;entryY=0.3598;entryDx=0;entryDy=0;" parent="1" source="auth-rbac-22" target="auth-rbac-23" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="auth-rbac-30" value="6. SAU COMMIT: SCAN+DEL rbac:perms:*  (mọi user mang role)" style="html=1;verticalAlign=bottom;endArrow=block;endFill=1;edgeStyle=none;strokeColor=#1F2A44;fontColor=#1F2A44;fontSize=11;exitX=0.5;exitY=0.4283;exitDx=0;exitDy=0;entryX=0.5;entryY=0.4283;entryDx=0;entryDy=0;" parent="1" source="auth-rbac-22" target="auth-rbac-24" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="auth-rbac-31" value="7. IRole  · audit rbac.role.set_permissions" style="html=1;verticalAlign=bottom;endArrow=open;dashed=1;edgeStyle=none;strokeColor=#1F2A44;fontColor=#1F2A44;fontSize=11;exitX=0.5;exitY=0.4969;exitDx=0;exitDy=0;entryX=0.5;entryY=0.4969;entryDx=0;entryDy=0;" parent="1" source="auth-rbac-21" target="auth-rbac-20" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="auth-rbac-32" value="8. PUT /rbac/users/:id/roles {roleIds[]}  (user:manage)" style="html=1;verticalAlign=bottom;endArrow=block;endFill=1;edgeStyle=none;strokeColor=#1F2A44;fontColor=#1F2A44;fontSize=11;exitX=0.5;exitY=0.5654;exitDx=0;exitDy=0;entryX=0.5;entryY=0.5654;entryDx=0;entryDy=0;" parent="1" source="auth-rbac-20" target="auth-rbac-21" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="auth-rbac-33" value="9. setUserRoles(userId, roleIds)" style="html=1;verticalAlign=bottom;endArrow=block;endFill=1;edgeStyle=none;strokeColor=#1F2A44;fontColor=#1F2A44;fontSize=11;exitX=0.5;exitY=0.6340;exitDx=0;exitDy=0;entryX=0.5;entryY=0.6340;entryDx=0;entryDy=0;" parent="1" source="auth-rbac-21" target="auth-rbac-22" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="auth-rbac-34" value="10. BEGIN · SELECT user FOR UPDATE · SELECT roles IN (…) · save user_roles · COMMIT" style="html=1;verticalAlign=bottom;endArrow=block;endFill=1;edgeStyle=none;strokeColor=#1F2A44;fontColor=#1F2A44;fontSize=11;exitX=0.5;exitY=0.7025;exitDx=0;exitDy=0;entryX=0.5;entryY=0.7025;entryDx=0;entryDy=0;" parent="1" source="auth-rbac-22" target="auth-rbac-23" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="auth-rbac-35" value="11. SAU COMMIT: DEL rbac:perms:{uid}  (chỉ user đó)" style="html=1;verticalAlign=bottom;endArrow=block;endFill=1;edgeStyle=none;strokeColor=#1F2A44;fontColor=#1F2A44;fontSize=11;exitX=0.5;exitY=0.7710;exitDx=0;exitDy=0;entryX=0.5;entryY=0.7710;entryDx=0;entryDy=0;" parent="1" source="auth-rbac-22" target="auth-rbac-24" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="auth-rbac-36" value="12. {id, roles[]} · audit rbac.user.set_roles" style="html=1;verticalAlign=bottom;endArrow=open;dashed=1;edgeStyle=none;strokeColor=#1F2A44;fontColor=#1F2A44;fontSize=11;exitX=0.5;exitY=0.8396;exitDx=0;exitDy=0;entryX=0.5;entryY=0.8396;entryDx=0;entryDy=0;" parent="1" source="auth-rbac-21" target="auth-rbac-20" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="auth-rbac-37" value="13. sửa DB bằng tay ngoài endpoint → chỉ TTL 5m bảo vệ" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F7E9F1;strokeColor=#8A3A6B;fontColor=#1F2A44;fontSize=11;align=left;spacingLeft=6;" parent="1" vertex="1">
+                    <mxGeometry x="1718" y="708" width="230" height="32" as="geometry"/>
+                </mxCell>
+            </root>
+        </mxGraphModel>
+    </diagram>
+    <diagram id="auth-refresh" name="Auth · Refresh &amp; revoke">
+        <mxGraphModel dx="1200" dy="800" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="2600" pageHeight="1100" math="0" shadow="0">
+            <root>
+                <mxCell id="0"/>
+                <mxCell id="1" parent="0"/>
+                <mxCell id="auth-refresh-title" value="AUTH · VÒNG ĐỜI TOKEN — POST /auth/refresh · /auth/logout · /auth/logout-all" style="text;html=1;align=left;verticalAlign=middle;fontSize=24;fontStyle=1;fontColor=#1F2A44;" parent="1" vertex="1">
+                    <mxGeometry x="40" y="20" width="1000" height="40" as="geometry"/>
+                </mxCell>
+                <mxCell id="auth-refresh-sub" value="Cùng route ở cả hai mode; AUTH_STRATEGY.renew/signOut/revokeAll quyết định. JWT: rotate refresh token trong family + phát hiện dùng lại. Session: rotate ID giữ absolute + touch trượt idle." style="text;html=1;align=left;verticalAlign=middle;fontSize=13;fontColor=#6B7385;" parent="1" vertex="1">
+                    <mxGeometry x="40" y="58" width="1300" height="26" as="geometry"/>
+                </mxCell>
+                <mxCell id="auth-refresh-1" value="AUTH_MODE=jwt · refresh rotation · auth.service.ts (JwtAuthStrategy bọc)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FBF1E6;strokeColor=#B25E09;fontColor=#B25E09;fontStyle=1;fontSize=13;align=left;spacingLeft=10;" parent="1" vertex="1">
+                    <mxGeometry x="40" y="100" width="710" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="auth-refresh-2" value="Client" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;dropTarget=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;rounded=1;fillColor=#FFFFFF;strokeColor=#B25E09;fontColor=#1F2A44;fontSize=12;fontStyle=1;" parent="1" vertex="1">
+                    <mxGeometry x="40" y="140" width="140" height="686" as="geometry"/>
+                </mxCell>
+                <mxCell id="auth-refresh-3" value="AuthController" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;dropTarget=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;rounded=1;fillColor=#FFFFFF;strokeColor=#B25E09;fontColor=#1F2A44;fontSize=12;fontStyle=1;" parent="1" vertex="1">
+                    <mxGeometry x="230" y="140" width="140" height="686" as="geometry"/>
+                </mxCell>
+                <mxCell id="auth-refresh-4" value="AuthService" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;dropTarget=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;rounded=1;fillColor=#FFFFFF;strokeColor=#B25E09;fontColor=#1F2A44;fontSize=12;fontStyle=1;" parent="1" vertex="1">
+                    <mxGeometry x="420" y="140" width="140" height="686" as="geometry"/>
+                </mxCell>
+                <mxCell id="auth-refresh-5" value="PostgreSQL" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;dropTarget=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;rounded=1;fillColor=#FFFFFF;strokeColor=#B25E09;fontColor=#1F2A44;fontSize=12;fontStyle=1;" parent="1" vertex="1">
+                    <mxGeometry x="610" y="140" width="140" height="686" as="geometry"/>
+                </mxCell>
+                <mxCell id="auth-refresh-6" value="1. POST /auth/refresh — cookie meago_rt=RT_old" style="html=1;verticalAlign=bottom;endArrow=block;endFill=1;edgeStyle=none;strokeColor=#1F2A44;fontColor=#1F2A44;fontSize=11;exitX=0.5;exitY=0.0802;exitDx=0;exitDy=0;entryX=0.5;entryY=0.0802;entryDx=0;entryDy=0;" parent="1" source="auth-refresh-2" target="auth-refresh-3" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="auth-refresh-7" value="2. renew({kind: refresh, token})" style="html=1;verticalAlign=bottom;endArrow=block;endFill=1;edgeStyle=none;strokeColor=#1F2A44;fontColor=#1F2A44;fontSize=11;exitX=0.5;exitY=0.1443;exitDx=0;exitDy=0;entryX=0.5;entryY=0.1443;entryDx=0;entryDy=0;" parent="1" source="auth-refresh-3" target="auth-refresh-4" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="auth-refresh-8" value="3. SELECT id, userId, familyId WHERE tokenHash=sha256(RT_old)" style="html=1;verticalAlign=bottom;endArrow=block;endFill=1;edgeStyle=none;strokeColor=#1F2A44;fontColor=#1F2A44;fontSize=11;exitX=0.5;exitY=0.2085;exitDx=0;exitDy=0;entryX=0.5;entryY=0.2085;entryDx=0;entryDy=0;" parent="1" source="auth-refresh-4" target="auth-refresh-5" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="auth-refresh-9" value="4. BEGIN · advisory lock user → lock family · SELECT session FOR UPDATE" style="html=1;verticalAlign=bottom;endArrow=block;endFill=1;edgeStyle=none;strokeColor=#1F2A44;fontColor=#1F2A44;fontSize=11;exitX=0.5;exitY=0.2726;exitDx=0;exitDy=0;entryX=0.5;entryY=0.2726;entryDx=0;entryDy=0;" parent="1" source="auth-refresh-4" target="auth-refresh-5" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="auth-refresh-10" value="alt session.replacedBy đã có (token cũ bị dùng lại)" style="shape=umlFrame;whiteSpace=wrap;html=1;width=150;height=22;fontSize=11;fontStyle=1;strokeColor=#6B7385;fontColor=#6B7385;fillColor=none;dashed=1;" parent="1" vertex="1">
+                    <mxGeometry x="410" y="359" width="350" height="150" as="geometry"/>
+                </mxCell>
+                <mxCell id="auth-refresh-11" value="5. revokedAt &lt; 5s trước → 409 AUTH_REFRESH_RACE (2 tab đua, không giết family)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FBF1E6;strokeColor=#B25E09;fontColor=#1F2A44;fontSize=11;align=left;spacingLeft=6;" parent="1" vertex="1">
+                    <mxGeometry x="498" y="356" width="230" height="32" as="geometry"/>
+                </mxCell>
+                <mxCell id="auth-refresh-12" value="6. ngược lại → UPDATE family SET revokedAt (REUSE DETECTED)" style="html=1;verticalAlign=bottom;endArrow=block;endFill=1;edgeStyle=none;strokeColor=#1F2A44;fontColor=#1F2A44;fontSize=11;exitX=0.5;exitY=0.4009;exitDx=0;exitDy=0;entryX=0.5;entryY=0.4009;entryDx=0;entryDy=0;" parent="1" source="auth-refresh-4" target="auth-refresh-5" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="auth-refresh-13" value="7. 401 Refresh token reuse detected" style="html=1;verticalAlign=bottom;endArrow=open;dashed=1;edgeStyle=none;strokeColor=#1F2A44;fontColor=#1F2A44;fontSize=11;exitX=0.5;exitY=0.4650;exitDx=0;exitDy=0;entryX=0.5;entryY=0.4650;entryDx=0;entryDy=0;" parent="1" source="auth-refresh-4" target="auth-refresh-2" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="auth-refresh-14" value="8. revokedAt? expiresAt quá hạn? user không ACTIVE? → 401 (+ revoke family)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FBF1E6;strokeColor=#B25E09;fontColor=#1F2A44;fontSize=11;align=left;spacingLeft=6;" parent="1" vertex="1">
+                    <mxGeometry x="498" y="488" width="230" height="32" as="geometry"/>
+                </mxCell>
+                <mxCell id="auth-refresh-15" value="9. INSERT session mới: cùng familyId, expiresAt = CŨ (absolute)" style="html=1;verticalAlign=bottom;endArrow=block;endFill=1;edgeStyle=none;strokeColor=#1F2A44;fontColor=#1F2A44;fontSize=11;exitX=0.5;exitY=0.5933;exitDx=0;exitDy=0;entryX=0.5;entryY=0.5933;entryDx=0;entryDy=0;" parent="1" source="auth-refresh-4" target="auth-refresh-5" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="auth-refresh-16" value="10. UPDATE cũ SET revokedAt=now, replacedBy=id mới · COMMIT" style="html=1;verticalAlign=bottom;endArrow=block;endFill=1;edgeStyle=none;strokeColor=#1F2A44;fontColor=#1F2A44;fontSize=11;exitX=0.5;exitY=0.6574;exitDx=0;exitDy=0;entryX=0.5;entryY=0.6574;entryDx=0;entryDy=0;" parent="1" source="auth-refresh-4" target="auth-refresh-5" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="auth-refresh-17" value="11. {accessToken mới, expiresIn} + Set-Cookie meago_rt=RT_new" style="html=1;verticalAlign=bottom;endArrow=open;dashed=1;edgeStyle=none;strokeColor=#1F2A44;fontColor=#1F2A44;fontSize=11;exitX=0.5;exitY=0.7216;exitDx=0;exitDy=0;entryX=0.5;entryY=0.7216;entryDx=0;entryDy=0;" parent="1" source="auth-refresh-3" target="auth-refresh-2" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="auth-refresh-18" value="12. POST /auth/logout (cookie) → revoke 1 session · /logout-all (Bearer) → revoke mọi session của user" style="html=1;verticalAlign=bottom;endArrow=block;endFill=1;edgeStyle=none;strokeColor=#1F2A44;fontColor=#1F2A44;fontSize=11;exitX=0.5;exitY=0.7857;exitDx=0;exitDy=0;entryX=0.5;entryY=0.7857;entryDx=0;entryDy=0;" parent="1" source="auth-refresh-2" target="auth-refresh-3" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="auth-refresh-19" value="13. Access JWT đã cấp vẫn sống tới exp (≤15m) — không thu hồi được" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FBF1E6;strokeColor=#B25E09;fontColor=#1F2A44;fontSize=11;align=left;spacingLeft=6;" parent="1" vertex="1">
+                    <mxGeometry x="498" y="708" width="230" height="32" as="geometry"/>
+                </mxCell>
+                <mxCell id="auth-refresh-20" value="AUTH_MODE=session · rotate ID + touch · session-auth.strategy.ts · cached-session.store.ts" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E6F3F0;strokeColor=#0F7B6C;fontColor=#0F7B6C;fontStyle=1;fontSize=13;align=left;spacingLeft=10;" parent="1" vertex="1">
+                    <mxGeometry x="880" y="100" width="1090" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="auth-refresh-21" value="Client" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;dropTarget=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;rounded=1;fillColor=#FFFFFF;strokeColor=#0F7B6C;fontColor=#1F2A44;fontSize=12;fontStyle=1;" parent="1" vertex="1">
+                    <mxGeometry x="880" y="140" width="140" height="642" as="geometry"/>
+                </mxCell>
+                <mxCell id="auth-refresh-22" value="AuthController" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;dropTarget=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;rounded=1;fillColor=#FFFFFF;strokeColor=#0F7B6C;fontColor=#1F2A44;fontSize=12;fontStyle=1;" parent="1" vertex="1">
+                    <mxGeometry x="1070" y="140" width="140" height="642" as="geometry"/>
+                </mxCell>
+                <mxCell id="auth-refresh-23" value="SessionAuthStrategy" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;dropTarget=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;rounded=1;fillColor=#FFFFFF;strokeColor=#0F7B6C;fontColor=#1F2A44;fontSize=12;fontStyle=1;" parent="1" vertex="1">
+                    <mxGeometry x="1260" y="140" width="140" height="642" as="geometry"/>
+                </mxCell>
+                <mxCell id="auth-refresh-24" value="CachedSessionStore" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;dropTarget=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;rounded=1;fillColor=#FFFFFF;strokeColor=#0F7B6C;fontColor=#1F2A44;fontSize=12;fontStyle=1;" parent="1" vertex="1">
+                    <mxGeometry x="1450" y="140" width="140" height="642" as="geometry"/>
+                </mxCell>
+                <mxCell id="auth-refresh-25" value="PostgreSQL" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;dropTarget=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;rounded=1;fillColor=#FFFFFF;strokeColor=#0F7B6C;fontColor=#1F2A44;fontSize=12;fontStyle=1;" parent="1" vertex="1">
+                    <mxGeometry x="1640" y="140" width="140" height="642" as="geometry"/>
+                </mxCell>
+                <mxCell id="auth-refresh-26" value="Redis" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;dropTarget=0;collapsible=0;recursiveResize=0;outlineConnect=0;portConstraint=eastwest;rounded=1;fillColor=#FFFFFF;strokeColor=#0F7B6C;fontColor=#1F2A44;fontSize=12;fontStyle=1;" parent="1" vertex="1">
+                    <mxGeometry x="1830" y="140" width="140" height="642" as="geometry"/>
+                </mxCell>
+                <mxCell id="auth-refresh-27" value="1. POST /auth/refresh — cookie meago_sid=SID_old + X-Requested-With" style="html=1;verticalAlign=bottom;endArrow=block;endFill=1;edgeStyle=none;strokeColor=#1F2A44;fontColor=#1F2A44;fontSize=11;exitX=0.5;exitY=0.0857;exitDx=0;exitDy=0;entryX=0.5;entryY=0.0857;entryDx=0;entryDy=0;" parent="1" source="auth-refresh-21" target="auth-refresh-22" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="auth-refresh-28" value="2. renew({kind: session, sessionId})" style="html=1;verticalAlign=bottom;endArrow=block;endFill=1;edgeStyle=none;strokeColor=#1F2A44;fontColor=#1F2A44;fontSize=11;exitX=0.5;exitY=0.1542;exitDx=0;exitDy=0;entryX=0.5;entryY=0.1542;entryDx=0;entryDy=0;" parent="1" source="auth-refresh-22" target="auth-refresh-23" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="auth-refresh-29" value="3. findById(sha256(SID_old)) — Redis hit / miss → DB" style="html=1;verticalAlign=bottom;endArrow=block;endFill=1;edgeStyle=none;strokeColor=#1F2A44;fontColor=#1F2A44;fontSize=11;exitX=0.5;exitY=0.2227;exitDx=0;exitDy=0;entryX=0.5;entryY=0.2227;entryDx=0;entryDy=0;" parent="1" source="auth-refresh-23" target="auth-refresh-24" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="auth-refresh-30" value="4. revokedAt? idle quá hạn? absolute quá hạn? → 401" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E6F3F0;strokeColor=#0F7B6C;fontColor=#1F2A44;fontSize=11;align=left;spacingLeft=6;" parent="1" vertex="1">
+                    <mxGeometry x="1338" y="312" width="230" height="32" as="geometry"/>
+                </mxCell>
+                <mxCell id="auth-refresh-31" value="5. SID_new = random 32B; record mới: absolute = CŨ, idle = now+30m" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E6F3F0;strokeColor=#0F7B6C;fontColor=#1F2A44;fontSize=11;align=left;spacingLeft=6;" parent="1" vertex="1">
+                    <mxGeometry x="1338" y="356" width="230" height="32" as="geometry"/>
+                </mxCell>
+                <mxCell id="auth-refresh-32" value="6. BEGIN · UPDATE cũ SET revokedAt, replacedBy WHERE revokedAt IS NULL" style="html=1;verticalAlign=bottom;endArrow=block;endFill=1;edgeStyle=none;strokeColor=#1F2A44;fontColor=#1F2A44;fontSize=11;exitX=0.5;exitY=0.4283;exitDx=0;exitDy=0;entryX=0.5;entryY=0.4283;entryDx=0;entryDy=0;" parent="1" source="auth-refresh-24" target="auth-refresh-25" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="auth-refresh-33" value="alt affected = 0 (renew đồng thời khác đã thắng)" style="shape=umlFrame;whiteSpace=wrap;html=1;width=150;height=22;fontSize=11;fontStyle=1;strokeColor=#6B7385;fontColor=#6B7385;fillColor=none;dashed=1;" parent="1" vertex="1">
+                    <mxGeometry x="1440" y="447" width="540" height="62" as="geometry"/>
+                </mxCell>
+                <mxCell id="auth-refresh-34" value="7. 401 Session already rotated" style="html=1;verticalAlign=bottom;endArrow=open;dashed=1;edgeStyle=none;strokeColor=#1F2A44;fontColor=#1F2A44;fontSize=11;exitX=0.5;exitY=0.4969;exitDx=0;exitDy=0;entryX=0.5;entryY=0.4969;entryDx=0;entryDy=0;" parent="1" source="auth-refresh-23" target="auth-refresh-21" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="auth-refresh-35" value="8. INSERT record mới · COMMIT" style="html=1;verticalAlign=bottom;endArrow=block;endFill=1;edgeStyle=none;strokeColor=#1F2A44;fontColor=#1F2A44;fontSize=11;exitX=0.5;exitY=0.5654;exitDx=0;exitDy=0;entryX=0.5;entryY=0.5654;entryDx=0;entryDy=0;" parent="1" source="auth-refresh-24" target="auth-refresh-25" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="auth-refresh-36" value="9. SAU COMMIT: DEL auth:sess:{old} · SADD auth:user:{uid}:sessions {new}" style="html=1;verticalAlign=bottom;endArrow=block;endFill=1;edgeStyle=none;strokeColor=#1F2A44;fontColor=#1F2A44;fontSize=11;exitX=0.5;exitY=0.6340;exitDx=0;exitDy=0;entryX=0.5;entryY=0.6340;entryDx=0;entryDy=0;" parent="1" source="auth-refresh-24" target="auth-refresh-26" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="auth-refresh-37" value="10. {expiresAt} + Set-Cookie meago_sid=SID_new" style="html=1;verticalAlign=bottom;endArrow=open;dashed=1;edgeStyle=none;strokeColor=#1F2A44;fontColor=#1F2A44;fontSize=11;exitX=0.5;exitY=0.7025;exitDx=0;exitDy=0;entryX=0.5;entryY=0.7025;entryDx=0;entryDy=0;" parent="1" source="auth-refresh-22" target="auth-refresh-21" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="auth-refresh-38" value="11. /logout → revoke(id) + DEL key · /logout-all → revokeAll(uid) + SMEMBERS→DEL mọi key" style="html=1;verticalAlign=bottom;endArrow=block;endFill=1;edgeStyle=none;strokeColor=#1F2A44;fontColor=#1F2A44;fontSize=11;exitX=0.5;exitY=0.7710;exitDx=0;exitDy=0;entryX=0.5;entryY=0.7710;entryDx=0;entryDy=0;" parent="1" source="auth-refresh-21" target="auth-refresh-22" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="auth-refresh-39" value="12. touch (mỗi ≥60s): UPDATE lastSeenAt/expiresAt rồi DEL key — không SET" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E6F3F0;strokeColor=#0F7B6C;fontColor=#1F2A44;fontSize=11;align=left;spacingLeft=6;" parent="1" vertex="1">
+                    <mxGeometry x="1528" y="664" width="230" height="32" as="geometry"/>
                 </mxCell>
             </root>
         </mxGraphModel>

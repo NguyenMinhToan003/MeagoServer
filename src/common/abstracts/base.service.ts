@@ -22,7 +22,7 @@ import {
 } from 'src/database/concurrency';
 
 /**
- * Generic CRUD service — core rút gọn từ AActionsModel của EvoAutomationServer.
+ * Generic CRUD service.
  *
  * Idiom quan trọng nhất giữ lại: THREADING EntityManager.
  * Mọi method nhận `manager?: EntityManager` cuối cùng; khi được gọi trong

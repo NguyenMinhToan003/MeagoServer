@@ -8,7 +8,6 @@ import {
 
 /**
  * Base cho mọi entity: uuid PK + optimistic-lock version + timestamps.
- * (Rút từ ABaseModel của EvoAutomationServer)
  */
 export abstract class BaseEntity {
   @PrimaryGeneratedColumn('uuid')

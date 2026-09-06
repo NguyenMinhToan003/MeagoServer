@@ -16,6 +16,7 @@ import {
 } from './common/filters/http-exception.filter';
 import { TransformInterceptor } from './common/interceptors/transform.interceptor';
 import { createLoggerConfig } from './configs/logger.config';
+import { CsrfGuard } from './common/guards/csrf.guard';
 import { AuthenticationGuard } from './common/guards/authentication.guard';
 import { PermissionsGuard } from './common/guards/permissions.guard';
 import { RedisModule } from './libraries/redis/redis.module';
@@ -52,7 +53,8 @@ import { AuditModule } from './modules/audit/audit.module';
   ],
   providers: [
     { provide: APP_GUARD, useClass: ThrottlerGuard },
-    // thứ tự quan trọng: auth trước, permission sau
+    // thứ tự quan trọng: csrf (chỉ session mode) -> auth -> permission
+    { provide: APP_GUARD, useClass: CsrfGuard },
     { provide: APP_GUARD, useClass: AuthenticationGuard },
     { provide: APP_GUARD, useClass: PermissionsGuard },
     // Fallback catch-all; typed Meago filters below keep their own response envelope.

@@ -5,6 +5,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, EntityManager, IsNull, QueryFailedError, Repository } from 'typeorm';
 import * as crypto from 'crypto';
 import dayjs from 'dayjs';
+import type { AuthIdentity } from '@meago/core';
 import authConfig from 'src/configs/auth.config';
 import { UsersService } from 'src/modules/users/users.service';
 import { EUserStatus, UserEntity } from 'src/modules/users/user.entity';
@@ -18,13 +19,24 @@ import {
 const AUTH_USER_LOCK_NAMESPACE = 1_294_638_201;
 const AUTH_FAMILY_LOCK_NAMESPACE = 1_294_638_202;
 
+const TTL_UNIT_MS: Record<string, number> = { s: 1_000, m: 60_000, h: 3_600_000, d: 86_400_000 };
+
+/** Cùng cú pháp `expiresIn` của jsonwebtoken cho các dạng đang dùng: `900`, `15m`, `1h`, `7d`. */
+function parseTtlMs(ttl: string): number {
+  const match = /^(\d+)\s*([smhd])?$/i.exec(ttl.trim());
+  if (!match) throw new RangeError(`Unsupported access TTL format: ${ttl}`);
+  return parseInt(match[1], 10) * (TTL_UNIT_MS[(match[2] ?? 's').toLowerCase()] ?? 1_000);
+}
+
 export interface ITokenPair {
   accessToken: string;
+  accessExpiresAt: Date;
   refreshToken: string;
   refreshExpiresAt: Date;
   /** Internal audit/session context; controllers do not expose these fields. */
   userId: string;
   sessionId: string;
+  email?: string;
 }
 
 export interface IClientMeta {
@@ -74,7 +86,8 @@ export class AuthService {
     }
   }
 
-  async login(email: string, password: string, meta: IClientMeta): Promise<ITokenPair> {
+  /** Mode-neutral: xác minh email/password, trả identity đã kiểm tra. */
+  async authenticateCredentials(email: string, password: string): Promise<UserEntity> {
     const user = await this.usersService.findByEmail(email.trim().toLowerCase());
     const passwordMatches = await this.passwordHasher.verifyOrDummy(
       user?.passwordHash ?? null,
@@ -86,12 +99,21 @@ export class AuthService {
     if (user.status !== EUserStatus.ACTIVE) {
       throw new UnauthorizedException('Account is blocked');
     }
+    return user;
+  }
 
+  async login(email: string, password: string, meta: IClientMeta): Promise<ITokenPair> {
+    const user = await this.authenticateCredentials(email, password);
+    return this.issueForIdentity({ subjectId: user.id, email: user.email }, meta);
+  }
+
+  /** JWT mode: cấp access + refresh cho identity đã xác minh (family mới). */
+  async issueForIdentity(identity: AuthIdentity, meta: IClientMeta): Promise<ITokenPair> {
     return runDatabaseTransaction(
       this.dataSource,
       async (manager) => {
-        await this.lockUser(manager, user.id);
-        const currentUser = await this.usersService.findOneById(user.id, manager);
+        await this.lockUser(manager, identity.subjectId);
+        const currentUser = await this.usersService.findOneById(identity.subjectId, manager);
         if (!currentUser || currentUser.status !== EUserStatus.ACTIVE) {
           throw new UnauthorizedException('Account unavailable');
         }
@@ -225,7 +247,7 @@ export class AuthService {
   ): Promise<IssuedTokenPair> {
     const refreshToken = crypto.randomBytes(32).toString('hex');
     const refreshExpiresAt =
-      absoluteExpiresAt ?? dayjs().add(this.conf.refreshTtlDays, 'day').toDate();
+      absoluteExpiresAt ?? dayjs().add(this.conf.jwtRefreshTtlDays, 'day').toDate();
     const session = await repo.save(
       repo.create({
         userId: user.id,
@@ -237,24 +259,27 @@ export class AuthService {
       }),
     );
 
+    const issuedAt = new Date();
     const accessToken = await this.jwtService.signAsync(
       { sub: user.id, sid: session.id, email: user.email },
       {
-        secret: this.conf.accessSecret,
+        secret: this.conf.jwtAccessSecret,
         algorithm: 'HS256',
-        issuer: this.conf.issuer,
-        audience: this.conf.audience,
+        issuer: this.conf.jwtIssuer,
+        audience: this.conf.jwtAudience,
         jwtid: crypto.randomUUID(),
-        expiresIn: this.conf.accessTtl as JwtSignOptions['expiresIn'],
+        expiresIn: this.conf.jwtAccessTtl as JwtSignOptions['expiresIn'],
       },
     );
     return {
       pair: {
         accessToken,
+        accessExpiresAt: new Date(issuedAt.getTime() + parseTtlMs(this.conf.jwtAccessTtl)),
         refreshToken,
         refreshExpiresAt,
         userId: user.id,
         sessionId: session.id,
+        email: user.email,
       },
       sessionId: session.id,
     };
@@ -269,7 +294,7 @@ export class AuthService {
 
   private isRecentRotation(revokedAt: Date | null): boolean {
     if (!revokedAt) return false;
-    return dayjs().diff(dayjs(revokedAt), 'second', true) <= this.conf.refreshRaceGraceSeconds;
+    return dayjs().diff(dayjs(revokedAt), 'second', true) <= this.conf.jwtRefreshRaceGraceSeconds;
   }
 
   private lockUser(manager: EntityManager, userId: string): Promise<void> {

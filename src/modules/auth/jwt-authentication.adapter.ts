@@ -27,10 +27,10 @@ export class JwtAuthenticationAdapter implements AuthenticationPort {
     if (credential.kind !== 'bearer') return null;
     try {
       const payload = await this.jwtService.verifyAsync<AccessJwtPayload>(credential.token, {
-        secret: this.conf.accessSecret,
+        secret: this.conf.jwtAccessSecret,
         algorithms: ['HS256'],
-        issuer: this.conf.issuer,
-        audience: this.conf.audience,
+        issuer: this.conf.jwtIssuer,
+        audience: this.conf.jwtAudience,
       });
       if (!payload.sub || !payload.sid || !payload.jti) return null;
       return {

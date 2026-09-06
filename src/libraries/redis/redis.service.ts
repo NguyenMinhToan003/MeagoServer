@@ -53,6 +53,23 @@ export class RedisService implements OnModuleDestroy {
     }
   }
 
+  async sadd(key: string, ...members: string[]): Promise<void> {
+    try {
+      if (members.length) await this.client.sadd(key, ...members);
+    } catch (err) {
+      this.logger.warn(`sadd(${key}) failed: ${(err as Error).message}`);
+    }
+  }
+
+  async smembers(key: string): Promise<string[]> {
+    try {
+      return await this.client.smembers(key);
+    } catch (err) {
+      this.logger.warn(`smembers(${key}) failed: ${(err as Error).message}`);
+      return [];
+    }
+  }
+
   /** Xóa mọi key theo prefix (SCAN, không block Redis như KEYS). */
   async delByPrefix(prefix: string): Promise<void> {
     try {
@@ -68,6 +85,12 @@ export class RedisService implements OnModuleDestroy {
   }
 
   async onModuleDestroy() {
+    // quit() là một command: khi chưa kết nối nó nằm trong offline queue vô thời hạn
+    // và chặn app.close(). Chỉ quit khi đang ready, còn lại disconnect thẳng.
+    if (this.client.status !== 'ready') {
+      this.client.disconnect();
+      return;
+    }
     await this.client.quit().catch(() => this.client.disconnect());
   }
 }

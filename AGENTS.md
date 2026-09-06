@@ -7,7 +7,7 @@
 1. `docs/README.md` — định tuyến tài liệu canonical.
 2. `docs/reference/technology-stack.md` — công nghệ đang dùng và trạng thái áp dụng.
 3. `docs/architecture/system.md` — module, dependency direction và request flow.
-4. `docs/architecture/authentication.md` — JWT/session boundary và refresh rotation.
+4. `docs/architecture/authentication.md` — JWT/session boundary và refresh rotation; `docs/architecture/identity-principles.md` giải thích nguyên lý định danh hai mode.
 5. `docs/architecture/concurrency.md` — transaction, optimistic và pessimistic lock.
 6. `docs/standards/quality-gates.md` — gate trước khi bàn giao.
 7. `docs/standards/database-query-rules.md` — total order, cursor pagination và composite index bắt buộc khi sửa query/list.

@@ -76,6 +76,8 @@ Lỗi bị cấm:
 - Authentication chạy trước authorization; use case nhận `AuthPrincipal`, không tự parse JWT/cookie.
 - Password chỉ qua `PASSWORD_HASHER`; không log hoặc trả password hash.
 - Refresh token rotation, revoke family và lock order tuân thủ tài liệu authentication.
+- Chỉ một `AUTH_MODE` cho mỗi deployment. Controller/guard không có `if (mode)`: cấp/thu hồi credential qua `AUTH_STRATEGY`, header/cookie/body qua `AUTH_HTTP_TRANSPORT`; mỗi mode một bộ file riêng, `AuthModule` là nơi duy nhất biết cả hai. Không thêm code path chấp nhận cả Bearer lẫn session cookie.
+- Mọi ghi vào `auth_sessions` đi qua `SESSION_STORE`; mọi ghi vào `user_roles`/`role_permissions` đi qua `RbacService` kèm invalidate. Không `repo.update/save` trực tiếp lên các bảng này ở nơi khác — đây là điều kiện để cache Redis đáng tin.
 - Permission phải kiểm tra server-side; kiểm tra trên FE chỉ phục vụ UX.
 - Secret đến từ environment/secret file và phải được validate khi boot.
 - Query parameter binding, output encoding, request size limit, throttle và CORS được áp dụng tại đúng boundary; không tự nối SQL.
@@ -85,6 +87,7 @@ Lỗi bị cấm:
 
 - Database là nguồn sự thật trừ khi capability ghi rõ khác; cache miss/failure không được làm sai dữ liệu chính.
 - Cache key phải có namespace/version và tenant/user scope phù hợp; write phải có invalidation policy.
+- Cache-aside chuẩn: chỉ đường đọc được `SET` (luôn kèm TTL); đường ghi commit database trước rồi chỉ `DEL`, không `SET`. Không cache giá trị âm (revoked/không tồn tại) trừ khi capability ghi rõ.
 - Log có cấu trúc, request ID và context; không log cùng một lỗi ở mọi layer gây trùng lặp.
 - Không `console.log` trong runtime production code.
 - Sentry/monitoring không được nhận PII/secret chưa redaction.

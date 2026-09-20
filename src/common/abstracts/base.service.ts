@@ -6,6 +6,8 @@ import {
   EntityTarget,
   FindOptionsWhere,
   ILike,
+  IsNull,
+  Not,
   ObjectLiteral,
   Repository,
 } from 'typeorm';
@@ -20,6 +22,16 @@ import {
   TransactionOptions,
   updateWithVersion,
 } from 'src/database/concurrency';
+
+/** Cách findMulti xử lý hàng đã xoá mềm — luôn tường minh tại call site. */
+export enum EDeletedFilter {
+  /** Mặc định: ẩn hàng đã xoá mềm — dùng cho mọi danh sách nghiệp vụ bình thường. */
+  EXCLUDE = 'exclude',
+  /** Chỉ lấy hàng đã xoá mềm — màn hình thùng rác. */
+  ONLY = 'only',
+  /** Lấy cả hàng còn sống lẫn đã xoá mềm — audit/export. */
+  ALL = 'all',
+}
 
 /**
  * Generic CRUD service.
@@ -101,10 +113,15 @@ export abstract class BaseService<T extends BaseEntity & ObjectLiteral> {
     return this.getRepoManager(manager).findBy(where);
   }
 
-  /** Danh sách phân trang + sort + search chuẩn cho mọi module. */
+  /**
+   * Danh sách phân trang + sort + search chuẩn cho mọi module.
+   * deletedFilter mặc định EXCLUDE (ẩn hàng đã xoá mềm) — an toàn theo mặc định;
+   * muốn xem thùng rác hoặc audit thì truyền rõ EDeletedFilter.ONLY / .ALL.
+   */
   async findMulti(
     query: BaseQueryDto,
     where: FindOptionsWhere<T> = {},
+    deletedFilter: EDeletedFilter = EDeletedFilter.EXCLUDE,
     manager?: EntityManager,
   ): Promise<IPaginatedResult<T>> {
     const page = query.page ?? 1;
@@ -118,8 +135,14 @@ export abstract class BaseService<T extends BaseEntity & ObjectLiteral> {
         ? this.searchableFields.map((f) => ({ ...where, [f]: ILike(`%${query.search}%`) }))
         : [where];
 
+    const finalWhere: FindOptionsWhere<T>[] =
+      deletedFilter === EDeletedFilter.ONLY
+        ? searchWhere.map((w) => ({ ...w, deletedAt: Not(IsNull()) }))
+        : searchWhere;
+
     const [items, totalItems] = await this.getRepoManager(manager).findAndCount({
-      where: searchWhere,
+      where: finalWhere,
+      withDeleted: deletedFilter !== EDeletedFilter.EXCLUDE,
       order: (query.sortBy
         ? { [query.sortBy]: query.sortDir ?? 'DESC' }
         : { createdAt: 'DESC' }) as never,
@@ -157,7 +180,20 @@ export abstract class BaseService<T extends BaseEntity & ObjectLiteral> {
     }
   }
 
-  async removeMulti(ids: string[], manager?: EntityManager): Promise<void> {
+  /** Xoá mềm 1 bản ghi — set deletedAt, có thể restore lại. */
+  async softRemove(id: string, manager?: EntityManager): Promise<void> {
+    const result = await this.getRepoManager(manager).softDelete(id);
+    if (!result.affected) throw new NotFoundException(`${this.objectName} not found`);
+  }
+
+  /** Khôi phục bản ghi đã xoá mềm. */
+  async restore(id: string, manager?: EntityManager): Promise<void> {
+    const result = await this.getRepoManager(manager).restore(id);
+    if (!result.affected) throw new NotFoundException(`${this.objectName} not found`);
+  }
+
+  /** Xoá vĩnh viễn — dùng cho GDPR/compliance, không thể khôi phục. */
+  async hardRemove(ids: string[], manager?: EntityManager): Promise<void> {
     await this.getRepoManager(manager).delete(ids);
   }
 }

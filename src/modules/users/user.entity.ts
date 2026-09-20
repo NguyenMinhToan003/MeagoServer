@@ -8,7 +8,8 @@ export { EUserStatus } from '@meago/core';
 
 @Entity('users')
 export class UserEntity extends BaseEntity {
-  @Column({ unique: true })
+  /** Unique thật thi hành bằng partial index (chỉ áp cho hàng chưa xoá mềm) — xem migration. */
+  @Column()
   email: string;
 
   @Column({ length: 100 })

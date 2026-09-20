@@ -4,7 +4,8 @@ import { PermissionEntity } from './permission.entity';
 
 @Entity('roles')
 export class RoleEntity extends BaseEntity {
-  @Column({ unique: true, length: 50 })
+  /** Unique thật thi hành bằng partial index (chỉ áp cho hàng chưa xoá mềm) — xem migration. */
+  @Column({ length: 50 })
   name: string;
 
   @Column({ nullable: true })

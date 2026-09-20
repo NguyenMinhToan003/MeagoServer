@@ -13,6 +13,8 @@ import {
  * deletedAt: null = còn sống, có giá trị = đã xoá mềm. TypeORM tự thêm
  * "deletedAt IS NULL" vào mọi find/findOne/findAndCount mặc định — entity nào
  * không cần xoá mềm thì cột này cứ luôn null, không ảnh hưởng gì.
+ * Xoá (soft/hard) chỉ mở khoá qua DeletableService — entity không cần xoá thì
+ * service tương ứng extends thẳng BaseService, gọi softRemove/hardRemove sẽ lỗi compile.
  */
 export abstract class BaseEntity {
   @PrimaryGeneratedColumn('uuid')

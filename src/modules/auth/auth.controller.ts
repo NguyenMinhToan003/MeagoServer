@@ -11,7 +11,7 @@ import {
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiCookieAuth, ApiTags } from '@nestjs/swagger';
 import { Request, Response } from 'express';
-import type { AuthContext, AuthPrincipal } from '@meago/core';
+import type { AuthContext, AuthPrincipal, ICurrentUser } from '@meago/core';
 import { Public } from 'src/common/decorators/public.decorator';
 import { CurrentUser } from 'src/common/decorators/current-user.decorator';
 import { AUTH_STRATEGY, AuthStrategy } from 'src/common/auth/auth-strategy.port';
@@ -24,6 +24,7 @@ import {
 import { AuthService } from './auth.service';
 import { LoginDto, RegisterDto } from './auth.dto';
 import { UsersService } from 'src/modules/users/users.service';
+import { toUser } from 'src/modules/users/user.mapper';
 import { RbacService } from 'src/modules/rbac/rbac.service';
 import { Throttle } from '@nestjs/throttler';
 import { AuditAction } from 'src/modules/audit/audit-action.decorator';
@@ -49,7 +50,7 @@ export class AuthController {
   @AuditAction({ action: 'auth.register', resourceType: 'user', resourceIdPath: 'id' })
   async register(@Body() dto: RegisterDto) {
     const user = await this.authService.register(dto.email, dto.displayName, dto.password);
-    return { id: user.id, email: user.email, displayName: user.displayName };
+    return toUser(user);
   }
 
   @Public()
@@ -112,7 +113,7 @@ export class AuthController {
   @ApiBearerAuth()
   @ApiCookieAuth()
   @Get('me')
-  async me(@CurrentUser() user: AuthPrincipal) {
+  async me(@CurrentUser() user: AuthPrincipal): Promise<ICurrentUser> {
     const found = await this.usersService.findOneByIdOrFail(user.subjectId);
     const permissions = await this.rbacService.getUserPermissions(user.subjectId);
     return {

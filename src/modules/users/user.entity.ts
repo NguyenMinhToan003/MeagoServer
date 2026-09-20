@@ -1,5 +1,4 @@
 import { Column, Entity, JoinTable, ManyToMany } from 'typeorm';
-import { Exclude } from 'class-transformer';
 import { BaseEntity } from 'src/common/abstracts/base.entity';
 import { RoleEntity } from 'src/modules/rbac/role.entity';
 import { EUserStatus } from '@meago/core';
@@ -8,15 +7,15 @@ export { EUserStatus } from '@meago/core';
 
 @Entity('users')
 export class UserEntity extends BaseEntity {
-  /** Unique thật thi hành bằng partial index (chỉ áp cho hàng chưa xoá mềm) — xem migration. */
-  @Column()
+  /** Unique vĩnh viễn trên toàn bảng — kể cả hàng đã xoá mềm cũng giữ email, không cho đăng ký lại. */
+  @Column({ unique: true })
   email: string;
 
   @Column({ length: 100 })
   displayName: string;
 
+  /** Không bao giờ đưa ra API — response luôn đi qua user.mapper.ts (toUser), không map cột này. */
   @Column()
-  @Exclude()
   passwordHash: string;
 
   @Column({ type: 'enum', enum: EUserStatus, default: EUserStatus.ACTIVE })

@@ -116,4 +116,51 @@ export class RbacService {
   async invalidateAll(): Promise<void> {
     await this.redisService.delByPrefix(PERM_CACHE_PREFIX);
   }
+
+  /** Xoá mềm role — chặn nếu còn user nào đang mang role này, tránh mất quyền âm thầm. */
+  async softRemoveRole(id: string): Promise<void> {
+    const inUseCount = await this.userRepo
+      .createQueryBuilder('u')
+      .innerJoin('u.roles', 'r', 'r.id = :id', { id })
+      .getCount();
+    if (inUseCount > 0) {
+      throw new BadRequestException({
+        code: 'RBAC_ROLE_IN_USE',
+        message: 'Role is still assigned to users',
+        details: { id, userCount: inUseCount },
+      });
+    }
+
+    const result = await this.roleRepo.softDelete(id);
+    if (!result.affected) throw new NotFoundException('Role not found');
+    await this.invalidateAll();
+  }
+
+  async restoreRole(id: string): Promise<void> {
+    const result = await this.roleRepo.restore(id);
+    if (!result.affected) throw new NotFoundException('Role not found');
+  }
+
+  /** Xoá mềm permission — chặn nếu còn role nào đang chứa permission này. */
+  async softRemovePermission(id: string): Promise<void> {
+    const inUseCount = await this.roleRepo
+      .createQueryBuilder('r')
+      .innerJoin('r.permissions', 'p', 'p.id = :id', { id })
+      .getCount();
+    if (inUseCount > 0) {
+      throw new BadRequestException({
+        code: 'RBAC_PERMISSION_IN_USE',
+        message: 'Permission is still assigned to roles',
+        details: { id, roleCount: inUseCount },
+      });
+    }
+
+    const result = await this.permissionRepo.softDelete(id);
+    if (!result.affected) throw new NotFoundException('Permission not found');
+  }
+
+  async restorePermission(id: string): Promise<void> {
+    const result = await this.permissionRepo.restore(id);
+    if (!result.affected) throw new NotFoundException('Permission not found');
+  }
 }
